@@ -24,7 +24,22 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: process.env.FRONTEND_ORIGIN || "*", credentials: true }));
+const allowedOrigins = (process.env.FRONTEND_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, origin);
+      }
+      return callback(new Error("CORS not allowed for this origin"));
+    },
+    credentials: true,
+  })
+);
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
 app.use(compression());
