@@ -10,11 +10,6 @@ import ChatPage from "./pages/ChatPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
-import RoleGuard from "./components/RoleGuard.jsx";
-import AdminSubjectsPage from "./pages/AdminSubjectsPage.jsx";
-import AdminMaterialsPage from "./pages/AdminMaterialsPage.jsx";
-import AdminEventsPage from "./pages/AdminEventsPage.jsx";
-import AdminComponentsPage from "./pages/AdminComponentsPage.jsx";
 import ReminderDashboard from "./pages/ReminderDashboard.jsx";
 import MaterialDetailPage from "./pages/MaterialDetailPage.jsx";
 
@@ -42,46 +37,6 @@ const App = () => (
         <Route path="events" element={<EventsPage />} />
         <Route path="chat" element={<ChatPage />} />
         <Route path="reminders" element={<ReminderDashboard />} />
-        <Route
-          path="admin/subjects"
-          element={
-            <RoleGuard roles={["cr", "admin"]}>
-              <AdminSubjectsPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="admin/materials"
-          element={
-            <RoleGuard roles={["cr", "admin"]}>
-              <AdminMaterialsPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="admin/events"
-          element={
-            <RoleGuard roles={["cr", "admin"]}>
-              <AdminEventsPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="admin/components"
-          element={
-            <RoleGuard roles={["cr", "admin"]}>
-              <AdminComponentsPage />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="admin/reminders"
-          element={
-            <RoleGuard roles={["cr", "admin"]}>
-              <ReminderDashboard />
-            </RoleGuard>
-          }
-        />
       </Route>
     </Routes>
   </AuthProvider>

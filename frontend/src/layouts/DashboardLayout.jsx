@@ -14,16 +14,7 @@ const baseLinks = [
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
 
-  const links = user?.role === "student"
-    ? baseLinks
-    : [
-        ...baseLinks,
-        { to: "/admin/subjects", label: "Manage Subjects" },
-        { to: "/admin/materials", label: "Manage Materials" },
-        { to: "/admin/events", label: "Manage Events" },
-        { to: "/admin/components", label: "Manage Components" },
-        { to: "/admin/reminders", label: "Reminders" },
-      ];
+  const links = baseLinks;
 
   return (
     <div className="min-h-screen bg-slate-50">

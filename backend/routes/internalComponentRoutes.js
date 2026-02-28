@@ -5,6 +5,7 @@ import {
   deleteInternalComponent,
   listUpcomingInternalComponents,
   listInternalComponents,
+  updateInternalComponent,
 } from "../controllers/internalComponentController.js";
 
 const router = Router();
@@ -16,6 +17,12 @@ router.post(
   authenticate,
   authorize("cr", "admin"),
   createInternalComponent
+);
+router.put(
+  "/:id",
+  authenticate,
+  authorize("cr", "admin"),
+  updateInternalComponent
 );
 router.delete(
   "/:id",

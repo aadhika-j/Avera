@@ -1,6 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import api from "../services/api";
+
+const DEFAULT_SEMESTERS = [
+  { value: 1, label: "I" },
+  { value: 2, label: "II" },
+  { value: 3, label: "III" },
+  { value: 4, label: "IV" },
+  { value: 5, label: "V" },
+  { value: 6, label: "VI" },
+  { value: 7, label: "VII" },
+  { value: 8, label: "VIII" },
+];
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -10,8 +22,28 @@ const RegisterPage = () => {
     email: "",
     password: "",
     role: "student",
+    semester: DEFAULT_SEMESTERS[0].value,
   });
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [semesters, setSemesters] = useState(DEFAULT_SEMESTERS);
+
+  useEffect(() => {
+    const loadSemesters = async () => {
+      try {
+        const { data } = await api.get("/semesters");
+        const opts = (data.semesters || []).map((s) => ({ value: s._id || s.number, label: s.name }));
+        if (opts.length) {
+          setSemesters(opts);
+          setForm((prev) => ({ ...prev, semester: opts[0].value }));
+        }
+      } catch (err) {
+        setSemesters(DEFAULT_SEMESTERS);
+      }
+    };
+
+    loadSemesters();
+  }, []);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -57,14 +89,39 @@ const RegisterPage = () => {
           </div>
           <div>
             <label className="block text-sm text-slate-600">Password</label>
-            <input
-              type="password"
-              name="password"
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                className="w-full border rounded px-3 py-2 pr-10"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-2 text-sm text-slate-500"
+                onClick={() => setShowPassword((v) => !v)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm text-slate-600">Semester</label>
+            <select
+              name="semester"
               className="w-full border rounded px-3 py-2"
-              value={form.password}
+              value={form.semester}
               onChange={handleChange}
               required
-            />
+            >
+              {semesters.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm text-slate-600">Role</label>

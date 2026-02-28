@@ -7,8 +7,16 @@ const socket = io(import.meta.env.VITE_API_BASE?.replace("/api", "") || "http://
 
 const ChatPage = () => {
   const { user } = useAuth();
+  const userId = user?.id || user?._id;
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
+
+  const addMessage = (incoming) => {
+    setMessages((prev) => {
+      if (prev.some((m) => m._id === incoming._id)) return prev;
+      return [incoming, ...prev];
+    });
+  };
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -20,17 +28,37 @@ const ChatPage = () => {
 
   useEffect(() => {
     socket.on("chat:new", (message) => {
-      setMessages((prev) => [message, ...prev]);
+      addMessage(message);
+      if (message.sender !== userId && message.sender?._id !== userId && userId) {
+        api.post("/chat/read", { messageIds: [message._id] }).catch(() => {});
+      }
+    });
+
+    socket.on("chat:read", (payload) => {
+      if (!payload?.messageIds) return;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          payload.messageIds.includes(msg._id)
+            ? {
+                ...msg,
+                readBy: msg.readBy?.some((u) => (u._id || u.id) === payload.userId)
+                  ? msg.readBy
+                  : [...(msg.readBy || []), { _id: payload.userId }],
+              }
+            : msg
+        )
+      );
     });
     return () => {
       socket.off("chat:new");
+      socket.off("chat:read");
     };
   }, []);
 
   const sendMessage = async () => {
     if (!text.trim()) return;
-    await api.post("/chat", { content: text });
-    socket.emit("chat:send", { content: text, userId: user.id });
+    const { data } = await api.post("/chat", { content: text });
+    addMessage(data.message);
     setText("");
   };
 
@@ -42,6 +70,18 @@ const ChatPage = () => {
           <div key={msg._id} className="bg-white border rounded p-3 shadow-sm">
             <p className="text-sm text-slate-500">{msg.sender?.name || "User"}</p>
             <p className="text-slate-800">{msg.content}</p>
+            <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
+              <span>{msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</span>
+              <span>
+                {msg.sender?._id === userId || msg.sender === userId
+                  ? msg.readBy && msg.readBy.length > 1
+                    ? `Seen by ${msg.readBy.length - 1}`
+                    : "Sent"
+                  : msg.readBy?.some((u) => (u._id || u.id) === userId)
+                  ? "Seen"
+                  : "Delivered"}
+              </span>
+            </div>
           </div>
         ))}
       </div>

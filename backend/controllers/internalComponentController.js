@@ -74,3 +74,37 @@ export const deleteInternalComponent = async (req, res, next) => {
     next(err);
   }
 };
+
+export const updateInternalComponent = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { subjectId, type, deadline, description } = req.body;
+
+    const update = {};
+    if (subjectId) {
+      const subject = await Subject.findById(subjectId);
+      if (!subject) {
+        throw createError(404, "Subject not found");
+      }
+      update.subject = subjectId;
+    }
+
+    if (type) update.type = type;
+    if (deadline) update.deadline = deadline;
+    if (description !== undefined) update.description = description;
+
+    const component = await InternalComponent.findByIdAndUpdate(id, update, {
+      new: true,
+    })
+      .populate("subject")
+      .populate("createdBy", "name role");
+
+    if (!component) {
+      throw createError(404, "Component not found");
+    }
+
+    res.json({ component });
+  } catch (err) {
+    next(err);
+  }
+};

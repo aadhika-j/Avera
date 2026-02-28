@@ -17,6 +17,7 @@ const chatMessageSchema = new mongoose.Schema(
     isPinned: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
     attachments: [attachmentSchema],
+    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     metadata: {
       typing: { type: Boolean, default: false },
     },
