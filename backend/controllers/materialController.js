@@ -1,6 +1,7 @@
 import createError from "http-errors";
 import { Material } from "../models/Material.js";
 import { Subject } from "../models/Subject.js";
+import { sendEmail } from "../utils/notify.js";
 
 export const createMaterial = async (req, res, next) => {
   try {
@@ -18,6 +19,14 @@ export const createMaterial = async (req, res, next) => {
       storageProvider,
       uploadedBy: req.user._id,
     });
+    // Notify uploader via email (placeholder for broadcast)
+    if (req.user?.email) {
+      sendEmail(
+        req.user.email,
+        "Material uploaded",
+        `Material '${title}' uploaded for ${subject.name}`
+      ).catch(() => {});
+    }
 
     res.status(201).json({ material });
   } catch (err) {

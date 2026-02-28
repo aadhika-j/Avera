@@ -1,6 +1,7 @@
 import createError from "http-errors";
 import { InternalComponent } from "../models/InternalComponent.js";
 import { Subject } from "../models/Subject.js";
+import { sendSms, sendWhatsapp, sendEmail } from "../utils/notify.js";
 
 export const createInternalComponent = async (req, res, next) => {
   try {
@@ -17,6 +18,11 @@ export const createInternalComponent = async (req, res, next) => {
       description,
       createdBy: req.user._id,
     });
+    // Fire-and-forget notifications to subject's students (placeholder: assumes phone/email on req.user for demo)
+    const message = `New ${type} assigned for ${subject.name} due ${new Date(deadline).toLocaleString()}`;
+    if (req.user?.phoneNumber) sendSms(req.user.phoneNumber, message).catch(() => {});
+    if (req.user?.whatsappNumber) sendWhatsapp(req.user.whatsappNumber, message).catch(() => {});
+    if (req.user?.email) sendEmail(req.user.email, "New assignment", message).catch(() => {});
 
     res.status(201).json({ component });
   } catch (err) {
