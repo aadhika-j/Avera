@@ -5,8 +5,8 @@ import { Material } from "../models/Material.js";
 export const listComments = async (req, res, next) => {
   try {
     const { materialId } = req.params;
-    const comments = await Comment.find({ material: materialId })
-      .sort({ createdAt: -1 })
+    const comments = await Comment.find({ material: materialId, isDeleted: false })
+      .sort({ isPinned: -1, createdAt: -1 })
       .populate("author", "name role")
       .lean();
     res.json({ comments });

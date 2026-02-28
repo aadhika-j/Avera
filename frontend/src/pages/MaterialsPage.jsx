@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 
 const MaterialsPage = () => {
@@ -23,14 +24,19 @@ const MaterialsPage = () => {
                 <p className="text-lg font-semibold text-slate-800">{m.title}</p>
                 <p className="text-sm text-slate-600">{m.subject?.name}</p>
               </div>
-              <a
-                className="text-primary underline"
-                href={m.url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                View
-              </a>
+              <div className="flex gap-3 text-sm">
+                <Link className="text-primary underline" to={`/materials/${m._id}`}>
+                  Details
+                </Link>
+                <a
+                  className="text-primary underline"
+                  href={m.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View
+                </a>
+              </div>
             </div>
             <p className="text-sm text-slate-600 mt-2">{m.description}</p>
           </div>

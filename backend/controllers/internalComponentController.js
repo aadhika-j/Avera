@@ -1,6 +1,7 @@
 import createError from "http-errors";
 import { InternalComponent } from "../models/InternalComponent.js";
 import { Subject } from "../models/Subject.js";
+import { User } from "../models/User.js";
 import { sendSms, sendWhatsapp, sendEmail } from "../utils/notify.js";
 
 export const createInternalComponent = async (req, res, next) => {
@@ -18,11 +19,16 @@ export const createInternalComponent = async (req, res, next) => {
       description,
       createdBy: req.user._id,
     });
-    // Fire-and-forget notifications to subject's students (placeholder: assumes phone/email on req.user for demo)
-    const message = `New ${type} assigned for ${subject.name} due ${new Date(deadline).toLocaleString()}`;
-    if (req.user?.phoneNumber) sendSms(req.user.phoneNumber, message).catch(() => {});
-    if (req.user?.whatsappNumber) sendWhatsapp(req.user.whatsappNumber, message).catch(() => {});
-    if (req.user?.email) sendEmail(req.user.email, "New assignment", message).catch(() => {});
+
+    // Notify students in the same semester (non-blocking)
+    const students = await User.find({ semester: subject.semester, role: "student" }).lean();
+    const message = `New ${type} for ${subject.name} due ${new Date(deadline).toLocaleString()}`;
+    const tasks = students.flatMap((s) => [
+      s.phoneNumber ? sendSms(s.phoneNumber, message) : null,
+      s.whatsappNumber ? sendWhatsapp(s.whatsappNumber, message) : null,
+      s.email ? sendEmail(s.email, "New assignment", message) : null,
+    ]);
+    Promise.allSettled(tasks.filter(Boolean)).catch(() => {});
 
     res.status(201).json({ component });
   } catch (err) {
@@ -35,6 +41,19 @@ export const listInternalComponents = async (req, res, next) => {
     const { subjectId } = req.query;
     const filter = subjectId ? { subject: subjectId } : {};
     const components = await InternalComponent.find(filter)
+      .populate("subject")
+      .populate("createdBy", "name role");
+    res.json({ components });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listUpcomingInternalComponents = async (req, res, next) => {
+  try {
+    const now = new Date();
+    const components = await InternalComponent.find({ deadline: { $gte: now } })
+      .sort({ deadline: 1 })
       .populate("subject")
       .populate("createdBy", "name role");
     res.json({ components });

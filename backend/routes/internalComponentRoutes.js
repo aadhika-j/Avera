@@ -3,12 +3,14 @@ import { authenticate, authorize } from "../middlewares/auth.js";
 import {
   createInternalComponent,
   deleteInternalComponent,
+  listUpcomingInternalComponents,
   listInternalComponents,
 } from "../controllers/internalComponentController.js";
 
 const router = Router();
 
 router.get("/", authenticate, listInternalComponents);
+router.get("/upcoming", authenticate, listUpcomingInternalComponents);
 router.post(
   "/",
   authenticate,
