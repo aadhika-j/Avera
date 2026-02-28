@@ -17,6 +17,9 @@ import materialRoutes from "./routes/materialRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import semesterRoutes from "./routes/semesterRoutes.js";
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 import { initSockets } from "./sockets/index.js";
 
@@ -53,12 +56,15 @@ app.get("/health", (req, res) => {
 
 app.use("/api/docs", ...swaggerMiddleware);
 app.use("/api/auth", authRoutes);
+app.use("/api/semesters", semesterRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/components", internalComponentRoutes);
 app.use("/api/materials", materialRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/materials/:materialId/comments", commentRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

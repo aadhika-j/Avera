@@ -45,7 +45,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
+    () => ({
+      user,
+      loading,
+      login,
+      register,
+      logout,
+      isCR: user?.role === "cr" || user?.role === "admin",
+      isAdmin: user?.role === "admin",
+    }),
     [user, loading]
   );
 

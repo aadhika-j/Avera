@@ -2,7 +2,7 @@ import React from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
-const links = [
+const baseLinks = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/subjects", label: "Subjects" },
   { to: "/materials", label: "Materials" },
@@ -12,6 +12,16 @@ const links = [
 
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
+
+  const links = user?.role === "student"
+    ? baseLinks
+    : [
+        ...baseLinks,
+        { to: "/admin/subjects", label: "Manage Subjects" },
+        { to: "/admin/materials", label: "Manage Materials" },
+        { to: "/admin/events", label: "Manage Events" },
+        { to: "/admin/reminders", label: "Reminders" },
+      ];
 
   return (
     <div className="min-h-screen bg-slate-50">
