@@ -7,7 +7,7 @@ const socket = io(import.meta.env.VITE_API_BASE?.replace("/api", "") || "http://
 
 const ChatPage = () => {
   const { user } = useAuth();
-  const userId = user?.id || user?._id;
+  const userId = user?._id || user?.id || "";
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const listRef = useRef(null);
@@ -115,7 +115,11 @@ const ChatPage = () => {
       <h1 className="text-2xl font-semibold text-slate-800 mb-4">Class Chat</h1>
       <div ref={listRef} className="flex-1 overflow-y-auto space-y-3 flex flex-col">
         {messages.map((msg) => {
-          const isMine = msg.sender?._id === userId || msg.sender === userId;
+          const senderId =
+            typeof msg.sender === "string"
+              ? msg.sender
+              : msg.sender?._id || msg.sender?.id || "";
+          const isMine = senderId === userId;
           return (
             <div
               key={msg._id}
