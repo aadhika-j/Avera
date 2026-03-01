@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import api from "../services/api";
 
@@ -15,6 +15,27 @@ const baseLinks = [
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const [counts, setCounts] = useState({});
+  const location = useLocation();
+
+  const lastSeenKeys = useMemo(
+    () => ({
+      materials: user?._id ? `materialsLastSeen:${user._id}` : "materialsLastSeen",
+      reminders: user?._id ? `remindersLastSeen:${user._id}` : "remindersLastSeen",
+      events: user?._id ? `eventsLastSeen:${user._id}` : "eventsLastSeen",
+      chat: user?._id ? `chatLastSeen:${user._id}` : "chatLastSeen",
+    }),
+    [user?._id]
+  );
+
+  const countNew = (items = [], lastSeen) => {
+    const seenDate = lastSeen ? new Date(lastSeen) : null;
+    if (!seenDate) return items.length;
+    return items.filter((item) => {
+      const createdAt = item?.createdAt;
+      if (!createdAt) return true;
+      return new Date(createdAt) > seenDate;
+    }).length;
+  };
 
   useEffect(() => {
     const loadCounts = async () => {
@@ -25,18 +46,43 @@ const DashboardLayout = ({ children }) => {
           api.get("/events"),
           api.get("/chat"),
         ]);
+        const lastSeen = {
+          materials: localStorage.getItem(lastSeenKeys.materials),
+          reminders: localStorage.getItem(lastSeenKeys.reminders),
+          events: localStorage.getItem(lastSeenKeys.events),
+          chat: localStorage.getItem(lastSeenKeys.chat),
+        };
         setCounts({
-          materials: materials.data?.materials?.length || 0,
-          reminders: reminders.data?.components?.length || 0,
-          events: events.data?.events?.length || 0,
-          chat: chats.data?.messages?.length || 0,
+          materials: countNew(materials.data?.materials, lastSeen.materials),
+          reminders: countNew(reminders.data?.components, lastSeen.reminders),
+          events: countNew(events.data?.events, lastSeen.events),
+          chat: countNew(chats.data?.messages, lastSeen.chat),
         });
       } catch (err) {
         // ignore count errors
       }
     };
     loadCounts();
-  }, []);
+  }, [lastSeenKeys]);
+
+  useEffect(() => {
+    const pathToKey = {
+      "/materials": "materials",
+      "/reminders": "reminders",
+      "/events": "events",
+      "/chat": "chat",
+    };
+
+    const matchedKey = Object.entries(pathToKey).find(([path]) =>
+      location.pathname.startsWith(path)
+    )?.[1];
+
+    if (matchedKey) {
+      const now = new Date().toISOString();
+      localStorage.setItem(lastSeenKeys[matchedKey], now);
+      setCounts((prev) => ({ ...prev, [matchedKey]: 0 }));
+    }
+  }, [location.pathname, lastSeenKeys]);
 
   const links = baseLinks;
 
