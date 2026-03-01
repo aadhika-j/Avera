@@ -45,11 +45,22 @@ export const postMessage = async (req, res, next) => {
       sender: req.user._id,
       readBy: [req.user._id],
     });
-    const populated = await message
-      .populate("sender", "name role")
-      .populate("readBy", "name");
+    let populated = message;
 
-    emitChatMessage(populated);
+    try {
+      populated = await message.populate("sender", "name role").populate("readBy", "name");
+    } catch (populateErr) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to populate chat message", populateErr);
+    }
+
+    try {
+      emitChatMessage(populated);
+    } catch (emitErr) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to emit chat message", emitErr);
+    }
+
     res.status(201).json({ message: populated });
   } catch (err) {
     next(err);
