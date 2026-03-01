@@ -4,7 +4,7 @@ import { emitChatMessage, emitChatRead } from "../sockets/index.js";
 export const listMessages = async (req, res, next) => {
   try {
     const messages = await ChatMessage.find({})
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .limit(100)
       .populate("sender", "name role")
       .populate("readBy", "name");

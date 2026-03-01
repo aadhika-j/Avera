@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
@@ -10,6 +10,7 @@ const ChatPage = () => {
   const userId = user?.id || user?._id;
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
+  const listRef = useRef(null);
 
   const addMessage = (incoming, replaceId) => {
     setMessages((prev) => {
@@ -17,7 +18,7 @@ const ChatPage = () => {
       if (replaceId) {
         const replaced = prev.map((m) => (m._id === replaceId ? incoming : m));
         const found = replaced.some((m) => m._id === incoming._id);
-        return found ? replaced : [incoming, ...replaced];
+        return found ? replaced : [...replaced, incoming];
       }
 
       // De-dupe by id; also replace optimistic message that matches content/sender
@@ -34,7 +35,7 @@ const ChatPage = () => {
         return copy;
       }
 
-      return [incoming, ...prev];
+      return [...prev, incoming];
     });
   };
 
@@ -103,28 +104,42 @@ const ChatPage = () => {
     }
   };
 
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
     <div className="flex flex-col h-full max-h-[80vh]">
       <h1 className="text-2xl font-semibold text-slate-800 mb-4">Class Chat</h1>
-      <div className="flex-1 overflow-y-auto space-y-3">
-        {messages.map((msg) => (
-          <div key={msg._id} className="bg-white border rounded p-3 shadow-sm">
-            <p className="text-sm text-slate-500">{msg.sender?.name || "User"}</p>
-            <p className="text-slate-800">{msg.content}</p>
-            <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
-              <span>{msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</span>
-              <span>
-                {msg.sender?._id === userId || msg.sender === userId
-                  ? msg.readBy && msg.readBy.length > 1
-                    ? `Seen by ${msg.readBy.length - 1}`
-                    : "Sent"
-                  : msg.readBy?.some((u) => (u._id || u.id) === userId)
-                  ? "Seen"
-                  : "Delivered"}
-              </span>
+      <div ref={listRef} className="flex-1 overflow-y-auto space-y-3 flex flex-col">
+        {messages.map((msg) => {
+          const isMine = msg.sender?._id === userId || msg.sender === userId;
+          return (
+            <div
+              key={msg._id}
+              className={`max-w-[80%] border rounded p-3 shadow-sm ${
+                isMine ? "self-start bg-blue-50 border-blue-100" : "self-end bg-white border-slate-200"
+              }`}
+            >
+              <p className="text-sm text-slate-500">{msg.sender?.name || "User"}</p>
+              <p className="text-slate-800 break-words">{msg.content}</p>
+              <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
+                <span>{msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</span>
+                <span>
+                  {isMine
+                    ? msg.readBy && msg.readBy.length > 1
+                      ? `Seen by ${msg.readBy.length - 1}`
+                      : "Sent"
+                    : msg.readBy?.some((u) => (u._id || u.id) === userId)
+                    ? "Seen"
+                    : "Delivered"}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div className="mt-4 flex gap-2">
         <input
