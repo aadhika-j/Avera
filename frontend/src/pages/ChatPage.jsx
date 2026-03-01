@@ -124,7 +124,7 @@ const ChatPage = () => {
             <div
               key={msg._id}
               className={`max-w-[80%] border rounded p-3 shadow-sm ${
-                isMine ? "self-start bg-blue-50 border-blue-100" : "self-end bg-white border-slate-200"
+                isMine ? "self-end bg-blue-50 border-blue-100" : "self-start bg-white border-slate-200"
               }`}
             >
               <p className="text-sm text-slate-500">{msg.sender?.name || "User"}</p>
