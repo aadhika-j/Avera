@@ -11,6 +11,32 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const listRef = useRef(null);
+  const [showEmojis, setShowEmojis] = useState(false);
+
+  const EMOJIS = ["😀", "😂", "😊", "👍", "🙏", "🎉", "❤️", "🔥", "😎", "🤔", "🙌", "✨", "🥳", "😅", "🤝", "📚", "✅", "❗", "❓"];
+
+  const formatTime = (isoString) => {
+    if (!isoString) return "";
+    const d = new Date(isoString);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const formatDateLabel = (isoString) => {
+    const d = new Date(isoString);
+    const now = new Date();
+
+    const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / dayMs);
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) {
+      return d.toLocaleDateString(undefined, { weekday: "long" });
+    }
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+  };
 
   const addMessage = (incoming, replaceId) => {
     setMessages((prev) => {
@@ -114,75 +140,114 @@ const ChatPage = () => {
     <div className="flex flex-col h-full max-h-[80vh]">
       <h1 className="text-2xl font-semibold text-slate-800 mb-4">Class Chat</h1>
       <div ref={listRef} className="flex-1 overflow-y-auto space-y-3 flex flex-col">
-        {messages.map((msg) => {
+        {messages.map((msg, idx) => {
           const senderId =
             typeof msg.sender === "string"
               ? msg.sender
               : msg.sender?._id || msg.sender?.id || "";
           const isMine = senderId === userId;
           const readCount = (msg.readBy || []).filter((u) => (u._id || u.id) !== senderId).length;
-          return (
-            <div
-              key={msg._id}
-              className={`relative max-w-[80%] border rounded-2xl p-3 shadow-sm leading-relaxed break-words ${
-                isMine
-                  ? "self-end bg-blue-100 border-blue-200 text-slate-900"
-                  : "self-start bg-blue-200 border-blue-300 text-slate-900"
-              }`}
-            >
-              {/* bubble tail */}
-              <span
-                className={`absolute bottom-2 h-3 w-3 rotate-45 ${
-                  isMine
-                    ? "bg-blue-100 border-b border-r border-blue-200 right-[-6px] top-3"
-                    : "bg-blue-200 border-b border-l border-blue-300 left-[-6px] top-3"
-                }`}
-                aria-hidden
-              />
 
-              <p className="text-sm text-slate-500 mb-1">{msg.sender?.name || "User"}</p>
-              <p className="text-base text-slate-900 whitespace-pre-wrap">{msg.content}</p>
-              {msg.attachments?.length ? (
-                <div className="mt-2 space-y-1">
-                  {msg.attachments.map((att) => (
-                    <div key={att.url} className="flex items-center gap-2 text-sm">
-                      <span className="text-slate-600">{att.name || att.type || "Attachment"}</span>
-                      <a
-                        className="px-2 py-1 rounded bg-white/60 text-primary border border-blue-200"
-                        href={att.url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Preview
-                      </a>
-                      <a
-                        className="px-2 py-1 rounded bg-blue-500 text-white"
-                        href={att.url}
-                        download
-                      >
-                        Download
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-              <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
-                <span>{msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ""}</span>
-                {isMine && (
-                  <span className="flex items-center gap-1">
-                    {readCount > 0 ? (
-                      <span className="text-blue-500">✓✓</span>
-                    ) : (
-                      <span className="text-slate-400">✓</span>
-                    )}
+          const prevMsg = messages[idx - 1];
+          const showDateLabel = !prevMsg ||
+            new Date(msg.createdAt).toDateString() !== new Date(prevMsg.createdAt).toDateString();
+
+          return (
+            <React.Fragment key={msg._id}>
+              {showDateLabel && (
+                <div className="flex justify-center mt-2 mb-1">
+                  <span className="px-3 py-1 rounded-full bg-slate-200 text-xs text-slate-600">
+                    {formatDateLabel(msg.createdAt)}
                   </span>
-                )}
+                </div>
+              )}
+              <div
+                className={`relative max-w-[80%] border rounded-2xl p-3 shadow-sm leading-relaxed break-words ${
+                  isMine
+                    ? "self-end bg-blue-100 border-blue-200 text-slate-900"
+                    : "self-start bg-blue-200 border-blue-300 text-slate-900"
+                }`}
+              >
+                {/* bubble tail */}
+                <span
+                  className={`absolute bottom-2 h-3 w-3 rotate-45 ${
+                    isMine
+                      ? "bg-blue-100 border-b border-r border-blue-200 right-[-6px] top-3"
+                      : "bg-blue-200 border-b border-l border-blue-300 left-[-6px] top-3"
+                  }`}
+                  aria-hidden
+                />
+
+                <p className="text-sm text-slate-500 mb-1">{msg.sender?.name || "User"}</p>
+                <p className="text-base text-slate-900 whitespace-pre-wrap">{msg.content}</p>
+                {msg.attachments?.length ? (
+                  <div className="mt-2 space-y-1">
+                    {msg.attachments.map((att) => (
+                      <div key={att.url} className="flex items-center gap-2 text-sm">
+                        <span className="text-slate-600">{att.name || att.type || "Attachment"}</span>
+                        <a
+                          className="px-2 py-1 rounded bg-white/60 text-primary border border-blue-200"
+                          href={att.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Preview
+                        </a>
+                        <a
+                          className="px-2 py-1 rounded bg-blue-500 text-white"
+                          href={att.url}
+                          download
+                        >
+                          Download
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between text-[11px] text-slate-600 mt-2">
+                  <span>{formatTime(msg.createdAt)}</span>
+                  {isMine && (
+                    <span className="flex items-center gap-1">
+                      {readCount > 0 ? (
+                        <span className="text-blue-600">✓✓</span>
+                      ) : (
+                        <span className="text-slate-400">✓</span>
+                      )}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            </React.Fragment>
           );
         })}
       </div>
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex gap-2 items-center relative">
+        <div className="relative">
+          <button
+            type="button"
+            className="h-10 w-10 rounded-full border border-slate-200 bg-white text-xl"
+            onClick={() => setShowEmojis((v) => !v)}
+          >
+            😊
+          </button>
+          {showEmojis && (
+            <div className="absolute z-10 bottom-12 left-0 grid grid-cols-6 gap-2 p-2 bg-white border rounded shadow-lg max-w-xs">
+              {EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  className="text-xl"
+                  onClick={() => {
+                    setText((t) => `${t}${emoji}`);
+                    setShowEmojis(false);
+                  }}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <input
           className="border rounded px-3 py-2 flex-1"
           value={text}
