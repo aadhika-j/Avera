@@ -12,8 +12,58 @@ const ChatPage = () => {
   const [text, setText] = useState("");
   const listRef = useRef(null);
   const [showEmojis, setShowEmojis] = useState(false);
+  const [emojiCategory, setEmojiCategory] = useState("Smileys");
+  const [emojiSearch, setEmojiSearch] = useState("");
+  const [recentEmojis, setRecentEmojis] = useState(() => {
+    try {
+      const stored = localStorage.getItem("recentEmojis");
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
 
-  const EMOJIS = ["😀", "😂", "😊", "👍", "🙏", "🎉", "❤️", "🔥", "😎", "🤔", "🙌", "✨", "🥳", "😅", "🤝", "📚", "✅", "❗", "❓"];
+  const EMOJI_CATEGORIES = {
+    Smileys: [
+      "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😍","😘","😗","😙","😚","😋","😛","😜","🤪","🤩","🤔","🤨","😐","😑","😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴","😌","😛","😝","🤤","😒","😓","😔","😕","🙁","😖","😞","😟","😢","😭","😤","😠","😡","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶‍🌫️","😶‍🌫","🫠","🤢","🤮","🤧","😷","🤒","🤕"
+    ],
+    Animals: ["🐶","🐱","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🦄","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🐢","🐍","🦕","🦖","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🦭","🐳","🐋"],
+    Food: ["🍎","🍌","🍇","🍉","🍓","🍒","🍑","🍍","🥭","🥥","🥝","🍅","🥑","🍆","🥕","🌽","🥔","🥐","🥯","🥨","🥖","🍞","🥞","🧇","🧀","🍖","🍗","🥩","🥓","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🥙","🥗","🍝","🍜","🍣"],
+    Activities: ["⚽","🏀","🏈","⚾","🎾","🏐","🏉","🎱","🏓","🏸","🥅","⛳","🥊","🥋","🎽","🛹","🎿","⛷","🏂","🏋️","⛸","🤺","🤼","🤸","⛹","🤾","🏌️","🏇","🧘","🏄","🏊","🤽","🚴","🚵"],
+    Travel: ["✈️","🛩","🛫","🛬","🚗","🚕","🚙","🚌","🚎","🏎","🚓","🚑","🚒","🚐","🛻","🚚","🚛","🚜","🏍","🛵","🚲","🚏","🛣","🛤","⛵","🚤","🛥","🛳","⛴","🚢","🗺","🧭","🏔","⛰","🌋","🗻"],
+    Objects: ["⌚","📱","💻","⌨️","🖥","🖨","🖱","🖲","💽","💾","💿","📀","📼","📷","📸","📹","🎥","📽","🎞","📞","☎️","📟","📠","📺","📻","🎙","🎚","🎛","🧭","⏱","⏲","⏰","🕰","⌛","⏳","📡"],
+    Symbols: ["❤️","🧡","💛","💚","💙","💜","🤎","🖤","🤍","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","☮️","✝️","☪️","🕉","☸️","✡️","🔯","🕎","☯️","☦️","🛐","⛎","♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓","🔞","🔠","🔡","🔢","🔣","🔤","🅰️","🅱️","🆎","🆑","🆒","🆓","🆔","🆕","🆖","🆗","🆘","🆙","🆚","🈁","🈂️","🈷️","🈶","🈯","🉐","🈹","🈚","🈲","🉑","🈸","🈴","🈳","㊗️","㊙️","🈺","🈵"]
+  };
+
+  const allEmojisFlat = Object.values(EMOJI_CATEGORIES).flat();
+
+  const filteredEmojis = (category) => {
+    const base = category === "Recent" ? recentEmojis : EMOJI_CATEGORIES[category] || [];
+    if (!emojiSearch.trim()) return base;
+    return base.filter((emoji) => emoji.includes(emojiSearch.trim()));
+  };
+
+  const insertEmoji = (emoji) => {
+    const input = document.getElementById("chat-input-box");
+    if (!input) {
+      setText((t) => `${t}${emoji}`);
+    } else {
+      const start = input.selectionStart || input.value.length;
+      const end = input.selectionEnd || input.value.length;
+      const newValue = input.value.slice(0, start) + emoji + input.value.slice(end);
+      setText(newValue);
+      const cursor = start + emoji.length;
+      requestAnimationFrame(() => {
+        input.focus();
+        input.setSelectionRange(cursor, cursor);
+      });
+    }
+
+    const updatedRecent = [emoji, ...recentEmojis.filter((e) => e !== emoji)].slice(0, 18);
+    setRecentEmojis(updatedRecent);
+    localStorage.setItem("recentEmojis", JSON.stringify(updatedRecent));
+    setShowEmojis(false);
+  };
 
   const formatTime = (isoString) => {
     if (!isoString) return "";
@@ -231,24 +281,54 @@ const ChatPage = () => {
             😊
           </button>
           {showEmojis && (
-            <div className="absolute z-10 bottom-12 left-0 grid grid-cols-6 gap-2 p-2 bg-white border rounded shadow-lg max-w-xs">
-              {EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  className="text-xl"
-                  onClick={() => {
-                    setText((t) => `${t}${emoji}`);
-                    setShowEmojis(false);
-                  }}
-                >
-                  {emoji}
-                </button>
-              ))}
+            <div className="absolute z-20 bottom-12 left-0 w-80 bg-white border rounded-lg shadow-xl p-3">
+              <div className="flex items-center gap-2 mb-2 overflow-x-auto whitespace-nowrap text-xs text-slate-700">
+                {"Recent" && (
+                  <button
+                    type="button"
+                    className={`px-2 py-1 rounded ${emojiCategory === "Recent" ? "bg-blue-100 text-blue-700" : "bg-slate-100"}`}
+                    onClick={() => setEmojiCategory("Recent")}
+                  >
+                    Recent
+                  </button>
+                )}
+                {Object.keys(EMOJI_CATEGORIES).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    className={`px-2 py-1 rounded ${emojiCategory === cat ? "bg-blue-100 text-blue-700" : "bg-slate-100"}`}
+                    onClick={() => setEmojiCategory(cat)}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                className="w-full border rounded px-2 py-1 text-sm mb-2"
+                placeholder="Search emojis"
+                value={emojiSearch}
+                onChange={(e) => setEmojiSearch(e.target.value)}
+              />
+              <div className="h-48 overflow-y-auto">
+                <div className="grid grid-cols-8 gap-2">
+                  {filteredEmojis(emojiCategory).map((emoji) => (
+                    <button
+                      key={`${emoji}-${emojiCategory}`}
+                      type="button"
+                      className="text-xl flex items-center justify-center rounded hover:bg-slate-100 transition"
+                      onClick={() => insertEmoji(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
         <input
+          id="chat-input-box"
           className="border rounded px-3 py-2 flex-1"
           value={text}
           onChange={(e) => setText(e.target.value)}
