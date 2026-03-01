@@ -11,9 +11,29 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
 
-  const addMessage = (incoming) => {
+  const addMessage = (incoming, replaceId) => {
     setMessages((prev) => {
-      if (prev.some((m) => m._id === incoming._id)) return prev;
+      // If we have a temp/placeholder id to replace, swap it out
+      if (replaceId) {
+        const replaced = prev.map((m) => (m._id === replaceId ? incoming : m));
+        const found = replaced.some((m) => m._id === incoming._id);
+        return found ? replaced : [incoming, ...replaced];
+      }
+
+      // De-dupe by id; also replace optimistic message that matches content/sender
+      const existing = prev.find((m) => m._id === incoming._id);
+      if (existing) return prev;
+
+      const optimisticIndex = prev.findIndex(
+        (m) => m._id?.toString().startsWith("temp-") && m.content === incoming.content && (m.sender === userId || m.sender?._id === userId)
+      );
+
+      if (optimisticIndex !== -1) {
+        const copy = [...prev];
+        copy[optimisticIndex] = incoming;
+        return copy;
+      }
+
       return [incoming, ...prev];
     });
   };
@@ -57,9 +77,30 @@ const ChatPage = () => {
 
   const sendMessage = async () => {
     if (!text.trim()) return;
-    const { data } = await api.post("/chat", { content: text });
-    addMessage(data.message);
+
+    const tempId = `temp-${Date.now()}`;
+    const optimistic = {
+      _id: tempId,
+      content: text,
+      sender: { _id: userId, name: user?.name },
+      createdAt: new Date().toISOString(),
+      readBy: [{ _id: userId }],
+    };
+
+    addMessage(optimistic);
+    const payload = text;
     setText("");
+
+    try {
+      const { data } = await api.post("/chat", { content: payload });
+      addMessage(data.message, tempId);
+    } catch (err) {
+      // Remove optimistic if failed
+      setMessages((prev) => prev.filter((m) => m._id !== tempId));
+      // Optionally could surface a toast; keep console for now
+      // eslint-disable-next-line no-console
+      console.error("Failed to send message", err?.response?.data || err?.message);
+    }
   };
 
   return (
