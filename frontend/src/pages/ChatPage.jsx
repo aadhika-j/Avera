@@ -126,22 +126,46 @@ const ChatPage = () => {
               key={msg._id}
               className={`relative max-w-[80%] border rounded-2xl p-3 shadow-sm leading-relaxed break-words ${
                 isMine
-                  ? "self-end bg-blue-50 border-blue-100 text-slate-900"
-                  : "self-start bg-white border-slate-200 text-slate-900"
+                  ? "self-end bg-blue-100 border-blue-200 text-slate-900"
+                  : "self-start bg-blue-200 border-blue-300 text-slate-900"
               }`}
             >
               {/* bubble tail */}
               <span
                 className={`absolute bottom-2 h-3 w-3 rotate-45 ${
                   isMine
-                    ? "bg-blue-50 border-b border-r border-blue-100 right-[-6px]"
-                    : "bg-white border-b border-l border-slate-200 left-[-6px]"
+                    ? "bg-blue-100 border-b border-r border-blue-200 right-[-6px] top-3"
+                    : "bg-blue-200 border-b border-l border-blue-300 left-[-6px] top-3"
                 }`}
                 aria-hidden
               />
 
               <p className="text-sm text-slate-500 mb-1">{msg.sender?.name || "User"}</p>
               <p className="text-base text-slate-900 whitespace-pre-wrap">{msg.content}</p>
+              {msg.attachments?.length ? (
+                <div className="mt-2 space-y-1">
+                  {msg.attachments.map((att) => (
+                    <div key={att.url} className="flex items-center gap-2 text-sm">
+                      <span className="text-slate-600">{att.name || att.type || "Attachment"}</span>
+                      <a
+                        className="px-2 py-1 rounded bg-white/60 text-primary border border-blue-200"
+                        href={att.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Preview
+                      </a>
+                      <a
+                        className="px-2 py-1 rounded bg-blue-500 text-white"
+                        href={att.url}
+                        download
+                      >
+                        Download
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
                 <span>{msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ""}</span>
                 {isMine && (
