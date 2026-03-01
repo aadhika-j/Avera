@@ -10,7 +10,7 @@ export const listMessages = async (req, res, next) => {
       .populate("readBy", "name");
 
     const unread = messages.filter(
-      (m) => !m.readBy.some((u) => u._id.toString() === req.user._id.toString())
+      (m) => !(m.readBy || []).some((u) => u._id.toString() === req.user._id.toString())
     );
 
     if (unread.length) {
