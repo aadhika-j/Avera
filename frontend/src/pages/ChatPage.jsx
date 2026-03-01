@@ -120,26 +120,39 @@ const ChatPage = () => {
               ? msg.sender
               : msg.sender?._id || msg.sender?.id || "";
           const isMine = senderId === userId;
+          const readCount = (msg.readBy || []).filter((u) => (u._id || u.id) !== senderId).length;
           return (
             <div
               key={msg._id}
-              className={`max-w-[80%] border rounded p-3 shadow-sm ${
-                isMine ? "self-end bg-blue-50 border-blue-100" : "self-start bg-white border-slate-200"
+              className={`relative max-w-[80%] border rounded-2xl p-3 shadow-sm leading-relaxed break-words ${
+                isMine
+                  ? "self-end bg-blue-50 border-blue-100 text-slate-900"
+                  : "self-start bg-white border-slate-200 text-slate-900"
               }`}
             >
-              <p className="text-sm text-slate-500">{msg.sender?.name || "User"}</p>
-              <p className="text-slate-800 break-words">{msg.content}</p>
-              <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
-                <span>{msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</span>
-                <span>
-                  {isMine
-                    ? msg.readBy && msg.readBy.length > 1
-                      ? `Seen by ${msg.readBy.length - 1}`
-                      : "Sent"
-                    : msg.readBy?.some((u) => (u._id || u.id) === userId)
-                    ? "Seen"
-                    : "Delivered"}
-                </span>
+              {/* bubble tail */}
+              <span
+                className={`absolute bottom-2 h-3 w-3 rotate-45 ${
+                  isMine
+                    ? "bg-blue-50 border-b border-r border-blue-100 right-[-6px]"
+                    : "bg-white border-b border-l border-slate-200 left-[-6px]"
+                }`}
+                aria-hidden
+              />
+
+              <p className="text-sm text-slate-500 mb-1">{msg.sender?.name || "User"}</p>
+              <p className="text-base text-slate-900 whitespace-pre-wrap">{msg.content}</p>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+                <span>{msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ""}</span>
+                {isMine && (
+                  <span className="flex items-center gap-1">
+                    {readCount > 0 ? (
+                      <span className="text-blue-500">✓✓</span>
+                    ) : (
+                      <span className="text-slate-400">✓</span>
+                    )}
+                  </span>
+                )}
               </div>
             </div>
           );
