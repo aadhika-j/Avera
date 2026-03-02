@@ -1,4 +1,5 @@
 import createError from "http-errors";
+import mongoose from "mongoose";
 import { InternalComponent } from "../models/InternalComponent.js";
 import { Subject } from "../models/Subject.js";
 import { User } from "../models/User.js";
@@ -39,7 +40,15 @@ export const createInternalComponent = async (req, res, next) => {
 export const listInternalComponents = async (req, res, next) => {
   try {
     const { subjectId } = req.query;
-    const filter = subjectId ? { subject: subjectId } : {};
+    const filter = {};
+
+    if (subjectId) {
+      if (!mongoose.Types.ObjectId.isValid(subjectId)) {
+        throw createError(400, "Invalid subject id");
+      }
+      filter.subject = subjectId;
+    }
+
     const components = await InternalComponent.find(filter)
       .populate("subject")
       .populate("createdBy", "name role");

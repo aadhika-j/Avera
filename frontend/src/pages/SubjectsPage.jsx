@@ -18,6 +18,8 @@ const SubjectsPage = () => {
   const [subjects, setSubjects] = useState([]);
   const [semesters, setSemesters] = useState(DEFAULT_SEMESTERS);
   const [form, setForm] = useState({ name: "", code: "", semesterId: "" });
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [components, setComponents] = useState([]);
   const { isCR } = useAuth();
 
   useEffect(() => {
@@ -41,6 +43,19 @@ const SubjectsPage = () => {
     fetchSemesters();
   }, []);
 
+  useEffect(() => {
+    const loadComponents = async () => {
+      if (!selectedSubject?._id) return;
+      try {
+        const { data } = await api.get(`/components?subjectId=${selectedSubject._id}`);
+        setComponents(data.components || []);
+      } catch (err) {
+        setComponents([]);
+      }
+    };
+    loadComponents();
+  }, [selectedSubject]);
+
   const submit = async (e) => {
     e.preventDefault();
     const { data } = await api.post("/subjects", {
@@ -55,7 +70,35 @@ const SubjectsPage = () => {
   const remove = async (id) => {
     await api.delete(`/subjects/${id}`);
     setSubjects((prev) => prev.filter((s) => s._id !== id));
+    if (selectedSubject?._id === id) {
+      setSelectedSubject(null);
+      setComponents([]);
+    }
   };
+
+  const formatLabel = (type) => {
+    if (type === "presentation") return "Will be conducted on";
+    if (type === "classTest1" || type === "classTest2") return "Will be conducted on";
+    return "To be submitted on";
+  };
+
+  const formatDateOnly = (value) => {
+    if (!value) return "";
+    return new Date(value).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const componentSlots = [
+    "assignment1",
+    "assignment2",
+    "classTest1",
+    "classTest2",
+    "presentation",
+    "research",
+  ];
 
   return (
     <div className="space-y-4">
@@ -100,22 +143,59 @@ const SubjectsPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {subjects.map((subject) => (
-          <div key={subject._id} className="bg-white border rounded p-4 shadow-sm">
-            <p className="text-sm text-slate-500">{subject.semester?.name}</p>
-            <p className="text-lg font-semibold text-slate-800">{subject.name}</p>
-            <p className="text-slate-600">Code: {subject.code}</p>
+          <button
+            key={subject._id}
+            type="button"
+            onClick={() => setSelectedSubject(subject)}
+            className={`rounded-lg border shadow-sm text-left p-4 transition hover:-translate-y-0.5 hover:shadow-md bg-sky-900 text-white ${
+              selectedSubject?._id === subject._id ? "ring-2 ring-sky-400" : ""
+            }`}
+          >
+            <p className="text-sm text-sky-100">{subject.semester?.name}</p>
+            <p className="text-lg font-semibold">{subject.name}</p>
+            <p className="text-sky-100/80">Code: {subject.code}</p>
             {isCR && (
               <button
-                onClick={() => remove(subject._id)}
-                className="text-red-600 text-sm mt-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  remove(subject._id);
+                }}
+                className="text-rose-200 text-sm mt-2 underline"
                 type="button"
               >
                 Delete
               </button>
             )}
-          </div>
+          </button>
         ))}
       </div>
+
+      {selectedSubject && (
+        <div className="mt-6 space-y-3">
+          <h2 className="text-xl font-semibold text-slate-800">{selectedSubject.name} Components</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {componentSlots.map((slot) => {
+              const found = components.find((c) => c.type === slot);
+              const label = formatLabel(slot);
+              return (
+                <div
+                  key={slot}
+                  className="border rounded-lg bg-white p-3 shadow-sm flex flex-col gap-2"
+                >
+                  <p className="text-sm font-semibold text-slate-800">{slot}</p>
+                  {found ? (
+                    <p className="text-sm text-slate-600">
+                      {label} {formatDateOnly(found.deadline || found.createdAt)}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-400">Not assigned</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
