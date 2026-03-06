@@ -176,20 +176,26 @@ const SubjectsPage = () => {
     setUploadProgress({ current: 0, eta: "", startedAt });
     const formData = new FormData();
     formData.append("file", file);
-    const { data } = await api.post("/uploads", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      onUploadProgress: (event) => {
-        const percent = Math.round((event.loaded * 100) / (event.total || 1));
-        const elapsedMs = Date.now() - startedAt;
-        const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
-        const remainingBytes = (event.total || 0) - event.loaded;
-        const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
-        const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
-        const eta = etaSeconds ? `${etaSeconds}s remaining` : "";
-        setUploadProgress({ current: percent, eta, startedAt });
-      },
-    });
-    return data;
+    // Use axios for upload, as in MaterialsPage
+    const { data: uploadResp } = await api.axios.post(
+      `${import.meta.env.VITE_API_BASE || "http://localhost:5000/api"}/uploads`,
+      formData,
+      {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (event) => {
+          const percent = Math.round((event.loaded * 100) / (event.total || 1));
+          const elapsedMs = Date.now() - startedAt;
+          const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
+          const remainingBytes = (event.total || 0) - event.loaded;
+          const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
+          const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
+          const eta = etaSeconds ? `${etaSeconds}s remaining` : "";
+          setUploadProgress({ current: percent, eta, startedAt });
+        },
+      }
+    );
+    return uploadResp;
   };
 
   const saveAttachments = async (componentId, nextAttachments, note) => {
