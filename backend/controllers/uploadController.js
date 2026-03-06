@@ -16,7 +16,9 @@ export const handleUpload = async (req, res, next) => {
       {
         folder: "avera/materials",
         resource_type: "auto",
-        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+        access_mode: "public",
+        use_filename: true,
+        unique_filename: true,
       },
       (error, uploadResult) => {
         if (error) {
@@ -24,6 +26,7 @@ export const handleUpload = async (req, res, next) => {
         } else {
           res.status(201).json({
             url: uploadResult.secure_url,
+            secureUrl: uploadResult.secure_url,
             publicId: uploadResult.public_id,
             resourceType: uploadResult.resource_type,
             format: uploadResult.format,

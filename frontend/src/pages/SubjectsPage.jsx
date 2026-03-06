@@ -143,6 +143,23 @@ const SubjectsPage = () => {
     return sanitizeLink(fallback);
   };
 
+  const inferFormat = (att, link) => {
+    if (att?.format) return att.format;
+    if (att?.mimeType?.includes("/")) return att.mimeType.split("/")[1];
+    const fromName = (att?.name || link || "").split(".").pop();
+    return fromName;
+  };
+
+  const buildPreviewLink = (att, link) => {
+    if (!link) return "";
+    const format = (inferFormat(att, link) || "").toLowerCase();
+    const docTypes = ["doc", "docx", "ppt", "pptx", "xls", "xlsx"]; // force Google viewer for Office docs
+    if (docTypes.includes(format)) {
+      return `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(link)}`;
+    }
+    return link;
+  };
+
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -155,13 +172,21 @@ const SubjectsPage = () => {
   };
 
   const uploadFile = async (file) => {
+    const startedAt = Date.now();
+    setUploadProgress({ current: 0, eta: "", startedAt });
     const formData = new FormData();
     formData.append("file", file);
     const { data } = await api.post("/uploads", formData, {
       headers: { "Content-Type": "multipart/form-data" },
       onUploadProgress: (event) => {
         const percent = Math.round((event.loaded * 100) / (event.total || 1));
-        setUploadProgress((prev) => ({ ...prev, current: percent }));
+        const elapsedMs = Date.now() - startedAt;
+        const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
+        const remainingBytes = (event.total || 0) - event.loaded;
+        const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
+        const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
+        const eta = etaSeconds ? `${etaSeconds}s remaining` : "";
+        setUploadProgress({ current: percent, eta, startedAt });
       },
     });
     return data;
@@ -391,6 +416,7 @@ const SubjectsPage = () => {
                               const link = pickLink(att);
                               const isValidLink = /^https?:\/\//i.test(link);
                               const filename = att.name || `attachment-${idx + 1}`;
+                              const previewLink = buildPreviewLink(att, link);
                               return (
                                 <div
                                   key={link || `${idx}`}
@@ -407,7 +433,7 @@ const SubjectsPage = () => {
                                       <>
                                         <a
                                           className="text-primary underline"
-                                          href={link}
+                                          href={previewLink}
                                           target="_blank"
                                           rel="noreferrer noopener"
                                           title={link}
@@ -490,12 +516,18 @@ const SubjectsPage = () => {
                                 </button>
                               </div>
                             )}
-                            {uploading === found._id && uploadProgress.current ? (
-                              <div className="h-2 bg-slate-200 rounded overflow-hidden">
-                                <div
-                                  className="h-full bg-primary"
-                                  style={{ width: `${uploadProgress.current}%` }}
-                                />
+                            {uploading === found._id ? (
+                              <div className="space-y-1">
+                                <div className="h-2 bg-slate-200 rounded overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary"
+                                    style={{ width: `${uploadProgress.current}%` }}
+                                  />
+                                </div>
+                                <div className="flex justify-between text-[11px] text-slate-600">
+                                  <span>{uploadProgress.current}%</span>
+                                  {uploadProgress.eta ? <span>{uploadProgress.eta}</span> : null}
+                                </div>
                               </div>
                             ) : null}
                             {copyMessage && (

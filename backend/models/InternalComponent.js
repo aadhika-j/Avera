@@ -23,7 +23,9 @@ const internalComponentSchema = new mongoose.Schema(
       {
         name: { type: String, required: true },
         url: { type: String, required: true },
+        secureUrl: { type: String },
         signedUrl: { type: String },
+        format: { type: String },
         mimeType: { type: String },
         size: { type: Number },
         publicId: { type: String },

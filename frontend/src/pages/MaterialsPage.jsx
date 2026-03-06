@@ -11,6 +11,7 @@ const MaterialsPage = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [etaText, setEtaText] = useState("");
   const [flash, setFlash] = useState("");
   const { isCR } = useAuth();
 
@@ -31,6 +32,8 @@ const MaterialsPage = () => {
     if (!file) return;
     setUploading(true);
     setProgress(0);
+    setEtaText("");
+    const startedAt = Date.now();
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -42,7 +45,13 @@ const MaterialsPage = () => {
           headers: { "Content-Type": "multipart/form-data" },
           onUploadProgress: (event) => {
             const percent = Math.round((event.loaded * 100) / (event.total || 1));
+            const elapsedMs = Date.now() - startedAt;
+            const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
+            const remainingBytes = (event.total || 0) - event.loaded;
+            const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
+            const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
             setProgress(percent);
+            setEtaText(etaSeconds ? `${etaSeconds}s remaining` : "");
           },
         }
       );
@@ -58,6 +67,7 @@ const MaterialsPage = () => {
       setFlash("Material uploaded successfully");
     } finally {
       setUploading(false);
+      setEtaText("");
       setTimeout(() => setFlash(""), 2000);
     }
   };
@@ -115,6 +125,12 @@ const MaterialsPage = () => {
           {uploading && (
             <div className="md:col-span-5 h-2 bg-slate-200 rounded overflow-hidden">
               <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
+            </div>
+          )}
+          {uploading && (
+            <div className="md:col-span-5 flex justify-between text-xs text-slate-600">
+              <span>{progress}%</span>
+              {etaText ? <span>{etaText}</span> : null}
             </div>
           )}
         </form>
