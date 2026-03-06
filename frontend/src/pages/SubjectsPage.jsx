@@ -20,6 +20,14 @@ const SubjectsPage = () => {
   const [form, setForm] = useState({ name: "", code: "", semesterId: "" });
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [components, setComponents] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [uploading, setUploading] = useState(null);
+  const [noteDrafts, setNoteDrafts] = useState({});
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [flash, setFlash] = useState("");
+  const [flashError, setFlashError] = useState("");
+  const [pendingFiles, setPendingFiles] = useState({});
+  const [copyMessage, setCopyMessage] = useState("");
   const { isCR } = useAuth();
 
   useEffect(() => {
@@ -46,15 +54,24 @@ const SubjectsPage = () => {
   useEffect(() => {
     const loadComponents = async () => {
       if (!selectedSubject?._id) return;
-      try {
-        const { data } = await api.get(`/components?subjectId=${selectedSubject._id}`);
-        setComponents(data.components || []);
-      } catch (err) {
-        setComponents([]);
-      }
+      await refreshComponents(selectedSubject._id);
     };
     loadComponents();
   }, [selectedSubject]);
+
+  const refreshComponents = async (subjectId) => {
+    try {
+      const { data } = await api.get(`/components?subjectId=${subjectId}`);
+      setComponents(data.components || []);
+      const drafts = {};
+      (data.components || []).forEach((c) => {
+        drafts[c._id] = c.attachmentNote || "";
+      });
+      setNoteDrafts(drafts);
+    } catch (err) {
+      setComponents([]);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -72,6 +89,7 @@ const SubjectsPage = () => {
     setSubjects((prev) => prev.filter((s) => s._id !== id));
     if (selectedSubject?._id === id) {
       setSelectedSubject(null);
+      setShowModal(false);
       setComponents([]);
     }
   };
@@ -99,6 +117,127 @@ const SubjectsPage = () => {
     "presentation",
     "research",
   ];
+
+  const sanitizeLink = (rawLink) => {
+    if (!rawLink || typeof rawLink !== "string") return "";
+    const trimmed = rawLink.trim().replace(/^"|"$/g, "");
+    return trimmed;
+  };
+
+  const normalizeLink = (rawLink) => {
+    const sanitized = sanitizeLink(rawLink);
+    if (!sanitized) return "";
+    if (/^https?:\/\//i.test(sanitized)) return sanitized;
+    if (sanitized.startsWith("//")) return `https:${sanitized}`;
+    return `https://${sanitized}`;
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyMessage("Link copied");
+      setTimeout(() => setCopyMessage(""), 1500);
+    } catch (err) {
+      setCopyMessage("Copy failed");
+      setTimeout(() => setCopyMessage(""), 1500);
+    }
+  };
+
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await api.post("/uploads", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (event) => {
+        const percent = Math.round((event.loaded * 100) / (event.total || 1));
+        setUploadProgress((prev) => ({ ...prev, current: percent }));
+      },
+    });
+    return data;
+  };
+
+  const saveAttachments = async (componentId, nextAttachments, note) => {
+    const { data } = await api.put(`/components/${componentId}`, {
+      attachments: nextAttachments,
+      attachmentNote: note,
+    });
+    const updated = data.component || null;
+    setComponents((prev) =>
+      prev.map((c) =>
+        c._id === componentId ? updated || { ...c, attachments: nextAttachments, attachmentNote: note } : c
+      )
+    );
+    // refresh from server to ensure persisted URLs are used
+    await refreshComponents(selectedSubject?._id || "");
+  };
+
+  const handleAddAttachment = async (component, file) => {
+    if (!file) return;
+    setUploading(component._id);
+    try {
+      const upload = await uploadFile(file);
+      const uploadedUrl = normalizeLink(upload.url || upload.secure_url || upload.secureUrl);
+      if (!uploadedUrl) {
+        throw new Error("Upload did not return a file URL");
+      }
+      const next = [
+        ...(component.attachments || []),
+        {
+          name: file.name,
+          url: uploadedUrl,
+          secureUrl: uploadedUrl,
+          mimeType: file.type,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+        },
+      ];
+      const note = noteDrafts[component._id] || "";
+      await saveAttachments(component._id, next, note);
+      setFlash("Attachment uploaded successfully");
+      setFlashError("");
+    } finally {
+      setUploading(null);
+      setUploadProgress((prev) => ({ ...prev, current: 0 }));
+      setPendingFiles((prev) => ({ ...prev, [component._id]: null }));
+      setTimeout(() => setFlash(""), 2000);
+    }
+  };
+
+  const triggerPendingUpload = (component) => {
+    const pending = pendingFiles[component._id];
+    if (pending) {
+      handleAddAttachment(component, pending);
+    }
+  };
+
+  const handleRemoveAttachment = async (component, index) => {
+    const current = component.attachments || [];
+    const next = current.filter((_, i) => i !== index);
+    const note = noteDrafts[component._id] || "";
+    await saveAttachments(component._id, next, note);
+    setFlash("Attachment deleted");
+    setTimeout(() => setFlash(""), 1500);
+  };
+
+  const handleNoteChange = (componentId, value) => {
+    setNoteDrafts((prev) => ({ ...prev, [componentId]: value }));
+  };
+
+  const handleNoteSave = async (component) => {
+    const note = noteDrafts[component._id] || "";
+    try {
+      await saveAttachments(component._id, component.attachments || [], note);
+      setFlash("Message saved");
+      setFlashError("");
+    } catch (err) {
+      setFlashError("Failed to save message");
+    } finally {
+      setTimeout(() => {
+        setFlash("");
+        setFlashError("");
+      }, 2000);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -143,11 +282,21 @@ const SubjectsPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {subjects.map((subject) => (
-          <button
+          <div
             key={subject._id}
-            type="button"
-            onClick={() => setSelectedSubject(subject)}
-            className={`rounded-lg border shadow-sm text-left p-4 transition hover:-translate-y-0.5 hover:shadow-md bg-sky-900 text-white ${
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              setSelectedSubject(subject);
+              setShowModal(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setSelectedSubject(subject);
+                setShowModal(true);
+              }
+            }}
+            className={`rounded-lg border shadow-sm text-left p-4 transition hover:-translate-y-0.5 hover:shadow-md bg-sky-900 text-white cursor-pointer ${
               selectedSubject?._id === subject._id ? "ring-2 ring-sky-400" : ""
             }`}
           >
@@ -166,33 +315,192 @@ const SubjectsPage = () => {
                 Delete
               </button>
             )}
-          </button>
+          </div>
         ))}
       </div>
 
-      {selectedSubject && (
-        <div className="mt-6 space-y-3">
-          <h2 className="text-xl font-semibold text-slate-800">{selectedSubject.name} Components</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {componentSlots.map((slot) => {
-              const found = components.find((c) => c.type === slot);
-              const label = formatLabel(slot);
-              return (
-                <div
-                  key={slot}
-                  className="border rounded-lg bg-white p-3 shadow-sm flex flex-col gap-2"
-                >
-                  <p className="text-sm font-semibold text-slate-800">{slot}</p>
-                  {found ? (
-                    <p className="text-sm text-slate-600">
-                      {label} {formatDateOnly(found.deadline || found.createdAt)}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-slate-400">Not assigned</p>
-                  )}
+      {showModal && selectedSubject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl p-5 relative">
+            <button
+              type="button"
+              onClick={() => {
+                setShowModal(false);
+                setSelectedSubject(null);
+                setComponents([]);
+              }}
+              className="absolute right-3 top-3 text-slate-500 hover:text-slate-700"
+            >
+              ✕
+            </button>
+            <div className="mb-4">
+              <p className="text-sm text-slate-500">{selectedSubject.semester?.name}</p>
+              <h2 className="text-xl font-semibold text-slate-800">{selectedSubject.name}</h2>
+              {flash && (
+                <div className="mt-2 rounded bg-green-50 text-green-700 text-sm px-3 py-2 border border-green-200">
+                  {flash}
                 </div>
-              );
-            })}
+              )}
+              {flashError && (
+                <div className="mt-2 rounded bg-rose-50 text-rose-700 text-sm px-3 py-2 border border-rose-200">
+                  {flashError}
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {componentSlots.map((slot) => {
+                const found = components.find((c) => c.type === slot);
+                const label = formatLabel(slot);
+                const isAssigned = Boolean(found);
+                return (
+                  <div
+                    key={slot}
+                    className="border rounded-lg bg-white p-3 shadow-sm flex flex-col gap-2"
+                  >
+                    <p className="text-sm font-semibold text-slate-800">{slot}</p>
+                    {found ? (
+                      <p className="text-sm text-slate-600">
+                        {label} {formatDateOnly(found.deadline || found.createdAt)}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-slate-400">Not assigned</p>
+                    )}
+
+                    {isAssigned && (
+                      <div className="mt-1 space-y-2">
+                        <p className="text-xs font-semibold text-slate-700">Attachments</p>
+                        {found.attachments?.length ? (
+                          <div className="space-y-2">
+                            {found.attachments.map((att, idx) => {
+                              const rawLink = att.url || att.secure_url || att.secureUrl || att.link;
+                              const link = normalizeLink(rawLink);
+                              const isValidLink = /^https?:\/\//i.test(link);
+                              const filename = att.name || `attachment-${idx + 1}`;
+                              return (
+                                <div
+                                  key={link || `${idx}`}
+                                  className="flex items-center justify-between text-sm bg-slate-50 border rounded px-2 py-1"
+                                >
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <span className="text-slate-500">📎</span>
+                                    <span className="text-slate-700 truncate" title={filename}>
+                                      {filename}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs">
+                                    {isValidLink ? (
+                                      <>
+                                        <button
+                                          type="button"
+                                          className="text-primary underline"
+                                          onClick={() => window.open(link, "_blank", "noopener")}
+                                        >
+                                          Preview
+                                        </button>
+                                        <a
+                                          className="text-primary underline"
+                                          href={link}
+                                          download={filename}
+                                          rel="noreferrer noopener"
+                                        >
+                                          Download
+                                        </a>
+                                        <button
+                                          type="button"
+                                          className="text-slate-600 underline"
+                                          onClick={() => copyToClipboard(link)}
+                                        >
+                                          Copy link
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <span className="text-amber-600">Link unavailable</span>
+                                    )}
+                                    {isCR && (
+                                      <button
+                                        type="button"
+                                        className="text-rose-600 underline"
+                                        onClick={() => handleRemoveAttachment(found, idx)}
+                                        disabled={uploading === found._id}
+                                      >
+                                        Delete
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-slate-400 flex items-center gap-2">
+                            <span>📎</span>
+                            <span>No attachments</span>
+                          </p>
+                        )}
+
+                        {isCR && (
+                          <div className="space-y-2">
+                            <label className="block text-xs text-slate-600" htmlFor={`${found._id}-file`}>
+                              Add/replace attachments
+                            </label>
+                            <input
+                              id={`${found._id}-file`}
+                              type="file"
+                              className="text-sm"
+                              onChange={(e) =>
+                                setPendingFiles((prev) => ({ ...prev, [found._id]: e.target.files?.[0] }))
+                              }
+                              disabled={uploading === found._id}
+                            />
+                            {pendingFiles[found._id] && (
+                              <div className="flex items-center gap-2 text-xs text-slate-600">
+                                <span>{pendingFiles[found._id]?.name}</span>
+                                <button
+                                  type="button"
+                                  className="bg-primary text-white px-2 py-1 rounded"
+                                  onClick={() => triggerPendingUpload(found)}
+                                  disabled={uploading === found._id}
+                                >
+                                  Save attachment
+                                </button>
+                              </div>
+                            )}
+                            {uploading === found._id && uploadProgress.current ? (
+                              <div className="h-2 bg-slate-200 rounded overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${uploadProgress.current}%` }}
+                                />
+                              </div>
+                            ) : null}
+                            {copyMessage && (
+                              <p className="text-xs text-green-700">{copyMessage}</p>
+                            )}
+                            <div className="space-y-1">
+                              <p className="text-xs text-slate-600">Message (optional)</p>
+                              <textarea
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                rows={2}
+                                value={noteDrafts[found._id] ?? ""}
+                                onChange={(e) => handleNoteChange(found._id, e.target.value)}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleNoteSave(found)}
+                                className="bg-primary text-white text-xs px-3 py-1 rounded"
+                                disabled={uploading === found._id}
+                              >
+                                Save message
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

@@ -19,6 +19,17 @@ const internalComponentSchema = new mongoose.Schema(
     description: { type: String, trim: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     remindersScheduled: { type: Boolean, default: false },
+    attachments: [
+      {
+        name: { type: String, required: true },
+        url: { type: String, required: true },
+        mimeType: { type: String },
+        size: { type: Number },
+        uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
+    attachmentNote: { type: String, trim: true },
   },
   { timestamps: true }
 );

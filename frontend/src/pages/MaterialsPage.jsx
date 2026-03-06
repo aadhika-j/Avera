@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
-import { uploadToCloudinary } from "../services/upload";
+import axios from "axios";
 import { useAuth } from "../hooks/useAuth";
 
 const MaterialsPage = () => {
@@ -10,6 +10,8 @@ const MaterialsPage = () => {
   const [form, setForm] = useState({ title: "", description: "", subjectId: "" });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [flash, setFlash] = useState("");
   const { isCR } = useAuth();
 
   useEffect(() => {
@@ -28,8 +30,23 @@ const MaterialsPage = () => {
     e.preventDefault();
     if (!file) return;
     setUploading(true);
+    setProgress(0);
     try {
-      const url = await uploadToCloudinary(file);
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data: uploadResp } = await axios.post(
+        `${import.meta.env.VITE_API_BASE || "http://localhost:5000/api"}/uploads`,
+        formData,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (event) => {
+            const percent = Math.round((event.loaded * 100) / (event.total || 1));
+            setProgress(percent);
+          },
+        }
+      );
+      const url = uploadResp.url;
       const { data } = await api.post("/materials", {
         ...form,
         url,
@@ -38,8 +55,10 @@ const MaterialsPage = () => {
       setMaterials((prev) => [data.material, ...prev]);
       setForm({ title: "", description: "", subjectId: "" });
       setFile(null);
+      setFlash("Material uploaded successfully");
     } finally {
       setUploading(false);
+      setTimeout(() => setFlash(""), 2000);
     }
   };
 
@@ -52,6 +71,11 @@ const MaterialsPage = () => {
           onSubmit={submit}
           className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-white p-4 border rounded"
         >
+          {flash && (
+            <div className="md:col-span-5 text-sm rounded bg-green-50 text-green-700 px-3 py-2 border border-green-200">
+              {flash}
+            </div>
+          )}
           <input
             className="border rounded px-3 py-2"
             placeholder="Title"
@@ -88,6 +112,11 @@ const MaterialsPage = () => {
           <button className="bg-primary text-white px-4 py-2 rounded" type="submit" disabled={uploading}>
             {uploading ? "Uploading..." : "Upload"}
           </button>
+          {uploading && (
+            <div className="md:col-span-5 h-2 bg-slate-200 rounded overflow-hidden">
+              <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
+            </div>
+          )}
         </form>
       )}
 

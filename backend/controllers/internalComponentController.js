@@ -7,7 +7,7 @@ import { sendSms, sendWhatsapp, sendEmail } from "../utils/notify.js";
 
 export const createInternalComponent = async (req, res, next) => {
   try {
-    const { subjectId, type, deadline, description } = req.body;
+    const { subjectId, type, deadline, description, attachments, attachmentNote } = req.body;
     const subject = await Subject.findById(subjectId);
     if (!subject) {
       throw createError(404, "Subject not found");
@@ -18,6 +18,8 @@ export const createInternalComponent = async (req, res, next) => {
       type,
       deadline,
       description,
+      attachments: attachments || [],
+      attachmentNote,
       createdBy: req.user._id,
     });
 
@@ -87,7 +89,7 @@ export const deleteInternalComponent = async (req, res, next) => {
 export const updateInternalComponent = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { subjectId, type, deadline, description } = req.body;
+    const { subjectId, type, deadline, description, attachments, attachmentNote } = req.body;
 
     const update = {};
     if (subjectId) {
@@ -101,6 +103,8 @@ export const updateInternalComponent = async (req, res, next) => {
     if (type) update.type = type;
     if (deadline) update.deadline = deadline;
     if (description !== undefined) update.description = description;
+    if (attachments !== undefined) update.attachments = attachments;
+    if (attachmentNote !== undefined) update.attachmentNote = attachmentNote;
 
     const component = await InternalComponent.findByIdAndUpdate(id, update, {
       new: true,
