@@ -177,7 +177,7 @@ const SubjectsPage = () => {
     const formData = new FormData();
     formData.append("file", file);
     // Use axios for upload, as in MaterialsPage
-    const { data: uploadResp } = await api.axios.post(
+    const { data: uploadResp } = await require("axios").post(
       `${import.meta.env.VITE_API_BASE || "http://localhost:5000/api"}/uploads`,
       formData,
       {
@@ -244,12 +244,12 @@ const SubjectsPage = () => {
       setFlashError("");
     } catch (err) {
       setFlashError("Failed to upload attachment: " + (err?.message || "Unknown error"));
-      setTimeout(() => setFlashError("");  , 3000);
+      setTimeout(() => setFlashError(""); 3000);
     } finally {
       setUploading(null);
       setUploadProgress((prev) => ({ ...prev, current: 0 }));
       setPendingFiles((prev) => ({ ...prev, [component._id]: null }));
-      setTimeout(() => setFlash("");  , 2000);
+      setTimeout(() => setFlash(""); 2000);
     }
   };
 
@@ -267,7 +267,7 @@ const SubjectsPage = () => {
     try {
       await saveAttachments(component._id, next, note);
       setFlash("Attachment deleted");
-      setTimeout(() => setFlash("");  , 1500);
+      setTimeout(() => setFlash(""); 1500);
     } catch (err) {
       setFlashError("Failed to delete attachment: " + (err?.message || "Unknown error"));
       setTimeout(() => setFlashError("");, 3000);
