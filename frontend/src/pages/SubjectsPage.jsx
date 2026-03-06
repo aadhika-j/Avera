@@ -267,7 +267,7 @@ const SubjectsPage = () => {
     try {
       await saveAttachments(component._id, next, note);
       setFlash("Attachment deleted");
-      setTimeout(() => setFlash("");, 1500);
+      setTimeout(() => setFlash("");  , 1500);
     } catch (err) {
       setFlashError("Failed to delete attachment: " + (err?.message || "Unknown error"));
       setTimeout(() => setFlashError("");, 3000);
