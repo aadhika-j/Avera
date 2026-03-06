@@ -176,7 +176,7 @@ const SubjectsPage = () => {
     setUploading(component._id);
     try {
       const upload = await uploadFile(file);
-      const uploadedUrl = normalizeLink(upload.url || upload.secure_url || upload.secureUrl);
+      const uploadedUrl = normalizeLink(upload.signedUrl || upload.url || upload.secure_url || upload.secureUrl);
       if (!uploadedUrl) {
         throw new Error("Upload did not return a file URL");
       }
@@ -186,6 +186,9 @@ const SubjectsPage = () => {
           name: file.name,
           url: uploadedUrl,
           secureUrl: uploadedUrl,
+          signedUrl: upload.signedUrl || uploadedUrl,
+          publicId: upload.publicId,
+          resourceType: upload.resourceType,
           mimeType: file.type,
           size: file.size,
           uploadedAt: new Date().toISOString(),
@@ -372,7 +375,7 @@ const SubjectsPage = () => {
                         {found.attachments?.length ? (
                           <div className="space-y-2">
                             {found.attachments.map((att, idx) => {
-                              const rawLink = att.url || att.secure_url || att.secureUrl || att.link;
+                              const rawLink = att.signedUrl || att.url || att.secure_url || att.secureUrl || att.link;
                               const link = normalizeLink(rawLink);
                               const isValidLink = /^https?:\/\//i.test(link);
                               const filename = att.name || `attachment-${idx + 1}`;

@@ -23,8 +23,11 @@ const internalComponentSchema = new mongoose.Schema(
       {
         name: { type: String, required: true },
         url: { type: String, required: true },
+        signedUrl: { type: String },
         mimeType: { type: String },
         size: { type: Number },
+        publicId: { type: String },
+        resourceType: { type: String },
         uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         uploadedAt: { type: Date, default: Date.now },
       },
