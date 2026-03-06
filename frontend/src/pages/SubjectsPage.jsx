@@ -393,13 +393,14 @@ const SubjectsPage = () => {
                                   <div className="flex items-center gap-2 text-xs">
                                     {isValidLink ? (
                                       <>
-                                        <button
-                                          type="button"
+                                        <a
                                           className="text-primary underline"
-                                          onClick={() => window.open(link, "_blank", "noopener")}
+                                          href={link}
+                                          target="_blank"
+                                          rel="noreferrer noopener"
                                         >
                                           Preview
-                                        </button>
+                                        </a>
                                         <a
                                           className="text-primary underline"
                                           href={link}
