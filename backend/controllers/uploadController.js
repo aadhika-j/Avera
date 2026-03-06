@@ -15,7 +15,7 @@ export const handleUpload = async (req, res, next) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: "avera/materials",
-        resource_type: "auto",
+        resource_type: "raw",
         access_mode: "public",
         use_filename: true,
         unique_filename: true,
