@@ -242,11 +242,14 @@ const SubjectsPage = () => {
       await saveAttachments(component._id, next, note);
       setFlash("Attachment uploaded successfully");
       setFlashError("");
+    } catch (err) {
+      setFlashError("Failed to upload attachment: " + (err?.message || "Unknown error"));
+      setTimeout(() => setFlashError("");  , 3000);
     } finally {
       setUploading(null);
       setUploadProgress((prev) => ({ ...prev, current: 0 }));
       setPendingFiles((prev) => ({ ...prev, [component._id]: null }));
-      setTimeout(() => setFlash(""), 2000);
+      setTimeout(() => setFlash("");  , 2000);
     }
   };
 
@@ -261,9 +264,14 @@ const SubjectsPage = () => {
     const current = component.attachments || [];
     const next = current.filter((_, i) => i !== index);
     const note = noteDrafts[component._id] || "";
-    await saveAttachments(component._id, next, note);
-    setFlash("Attachment deleted");
-    setTimeout(() => setFlash(""), 1500);
+    try {
+      await saveAttachments(component._id, next, note);
+      setFlash("Attachment deleted");
+      setTimeout(() => setFlash("");, 1500);
+    } catch (err) {
+      setFlashError("Failed to delete attachment: " + (err?.message || "Unknown error"));
+      setTimeout(() => setFlashError("");, 3000);
+    }
   };
 
   const handleNoteChange = (componentId, value) => {
