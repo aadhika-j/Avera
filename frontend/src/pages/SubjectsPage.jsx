@@ -124,12 +124,23 @@ const SubjectsPage = () => {
     return trimmed;
   };
 
-  const normalizeLink = (rawLink) => {
-    const sanitized = sanitizeLink(rawLink);
-    if (!sanitized) return "";
-    if (/^https?:\/\//i.test(sanitized)) return sanitized;
-    if (sanitized.startsWith("//")) return `https:${sanitized}`;
-    return `https://${sanitized}`;
+  const buildCloudinaryUrl = (att) => {
+    const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    if (!cloud) return "";
+    const publicId = att?.publicId;
+    const format = att?.format;
+    if (!publicId || !format) return "";
+    const version = att?.version ? `v${att.version}/` : "";
+    const type = att?.resourceType || "raw";
+    return `https://res.cloudinary.com/${cloud}/${type}/upload/${version}${publicId}.${format}`;
+  };
+
+  const pickLink = (att) => {
+    const candidates = [att?.secureUrl, att?.secure_url, att?.url, att?.signedUrl, att?.link];
+    const first = candidates.find((c) => typeof c === "string" && c.trim());
+    if (first) return sanitizeLink(first);
+    const fallback = buildCloudinaryUrl(att);
+    return sanitizeLink(fallback);
   };
 
   const copyToClipboard = async (text) => {
@@ -176,7 +187,7 @@ const SubjectsPage = () => {
     setUploading(component._id);
     try {
       const upload = await uploadFile(file);
-      const uploadedUrl = normalizeLink(upload.secure_url || upload.url || upload.signedUrl || upload.secureUrl);
+      const uploadedUrl = sanitizeLink(upload.secure_url || upload.url || upload.signedUrl || upload.secureUrl);
       if (!uploadedUrl) {
         throw new Error("Upload did not return a file URL");
       }
@@ -189,6 +200,8 @@ const SubjectsPage = () => {
           signedUrl: upload.signedUrl || uploadedUrl,
           publicId: upload.publicId,
           resourceType: upload.resourceType,
+          format: upload.format,
+          version: upload.version,
           mimeType: file.type,
           size: file.size,
           uploadedAt: new Date().toISOString(),
@@ -375,8 +388,7 @@ const SubjectsPage = () => {
                         {found.attachments?.length ? (
                           <div className="space-y-2">
                             {found.attachments.map((att, idx) => {
-                              const rawLink = att.secureUrl || att.secure_url || att.url || att.signedUrl || att.link;
-                              const link = normalizeLink(rawLink);
+                              const link = pickLink(att);
                               const isValidLink = /^https?:\/\//i.test(link);
                               const filename = att.name || `attachment-${idx + 1}`;
                               return (

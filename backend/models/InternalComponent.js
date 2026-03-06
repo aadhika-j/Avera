@@ -28,6 +28,7 @@ const internalComponentSchema = new mongoose.Schema(
         size: { type: Number },
         publicId: { type: String },
         resourceType: { type: String },
+        version: { type: Number },
         uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         uploadedAt: { type: Date, default: Date.now },
       },

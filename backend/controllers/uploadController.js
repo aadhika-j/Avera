@@ -27,6 +27,7 @@ export const handleUpload = async (req, res, next) => {
             publicId: uploadResult.public_id,
             resourceType: uploadResult.resource_type,
             format: uploadResult.format,
+            version: uploadResult.version,
           });
         }
       }
