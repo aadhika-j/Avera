@@ -22,25 +22,12 @@ export const handleUpload = async (req, res, next) => {
         if (error) {
           next(createError(500, error.message));
         } else {
-          try {
-            const signedUrl = cloudinary.url(uploadResult.public_id, {
-              secure: true,
-              sign_url: true,
-              resource_type: uploadResult.resource_type || "auto",
-            });
-            res.status(201).json({
-              url: uploadResult.secure_url,
-              publicId: uploadResult.public_id,
-              resourceType: uploadResult.resource_type,
-              signedUrl,
-            });
-          } catch (signErr) {
-            res.status(201).json({
-              url: uploadResult.secure_url,
-              publicId: uploadResult.public_id,
-              resourceType: uploadResult.resource_type,
-            });
-          }
+          res.status(201).json({
+            url: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
+            resourceType: uploadResult.resource_type,
+            format: uploadResult.format,
+          });
         }
       }
     );
