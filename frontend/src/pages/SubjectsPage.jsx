@@ -410,6 +410,7 @@ const SubjectsPage = () => {
                                           href={link}
                                           target="_blank"
                                           rel="noreferrer noopener"
+                                          title={link}
                                         >
                                           Preview
                                         </a>
@@ -418,9 +419,17 @@ const SubjectsPage = () => {
                                           href={link}
                                           download={filename}
                                           rel="noreferrer noopener"
+                                          title={link}
                                         >
                                           Download
                                         </a>
+                                        <button
+                                          type="button"
+                                          className="text-primary underline"
+                                          onClick={() => window.open(link, "_blank", "noopener")}
+                                        >
+                                          Open externally
+                                        </button>
                                         <button
                                           type="button"
                                           className="text-slate-600 underline"
