@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
-import axios from "axios";
 import { useAuth } from "../hooks/useAuth";
 
 const MaterialsPage = () => {
@@ -37,24 +36,19 @@ const MaterialsPage = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const { data: uploadResp } = await axios.post(
-        `${import.meta.env.VITE_API_BASE || "http://localhost:5000/api"}/uploads`,
-        formData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-          onUploadProgress: (event) => {
-            const percent = Math.round((event.loaded * 100) / (event.total || 1));
-            const elapsedMs = Date.now() - startedAt;
-            const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
-            const remainingBytes = (event.total || 0) - event.loaded;
-            const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
-            const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
-            setProgress(percent);
-            setEtaText(etaSeconds ? `${etaSeconds}s remaining` : "");
-          },
-        }
-      );
+      const { data: uploadResp } = await api.post("/uploads", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (event) => {
+          const percent = Math.round((event.loaded * 100) / (event.total || 1));
+          const elapsedMs = Date.now() - startedAt;
+          const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
+          const remainingBytes = (event.total || 0) - event.loaded;
+          const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
+          const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
+          setProgress(percent);
+          setEtaText(etaSeconds ? `${etaSeconds}s remaining` : "");
+        },
+      });
       const url = uploadResp.url;
       const { data } = await api.post("/materials", {
         ...form,

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
@@ -139,7 +138,15 @@ const SubjectsPage = () => {
   const pickLink = (att) => {
     const candidates = [att?.secureUrl, att?.secure_url, att?.url, att?.signedUrl, att?.link];
     const first = candidates.find((c) => typeof c === "string" && c.trim());
-    if (first) return sanitizeLink(first);
+    if (first) {
+      const cleaned = sanitizeLink(first);
+      const format = (inferFormat(att, cleaned) || "").toLowerCase();
+      const imageFormats = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"];
+      if (!imageFormats.includes(format) && cleaned.includes("/image/upload/")) {
+        return cleaned.replace("/image/upload/", "/raw/upload/");
+      }
+      return cleaned;
+    }
     const fallback = buildCloudinaryUrl(att);
     return sanitizeLink(fallback);
   };
@@ -178,24 +185,19 @@ const SubjectsPage = () => {
     const formData = new FormData();
     formData.append("file", file);
     // Use axios for upload, as in MaterialsPage
-    const { data: uploadResp } = await axios.post(
-      `${import.meta.env.VITE_API_BASE || "http://localhost:5000/api"}/uploads`,
-      formData,
-      {
-        withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          const percent = Math.round((event.loaded * 100) / (event.total || 1));
-          const elapsedMs = Date.now() - startedAt;
-          const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
-          const remainingBytes = (event.total || 0) - event.loaded;
-          const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
-          const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
-          const eta = etaSeconds ? `${etaSeconds}s remaining` : "";
-          setUploadProgress({ current: percent, eta, startedAt });
-        },
-      }
-    );
+    const { data: uploadResp } = await api.post("/uploads", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (event) => {
+        const percent = Math.round((event.loaded * 100) / (event.total || 1));
+        const elapsedMs = Date.now() - startedAt;
+        const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
+        const remainingBytes = (event.total || 0) - event.loaded;
+        const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
+        const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
+        const eta = etaSeconds ? `${etaSeconds}s remaining` : "";
+        setUploadProgress({ current: percent, eta, startedAt });
+      },
+    });
     return uploadResp;
   };
 
