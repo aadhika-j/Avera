@@ -5,7 +5,20 @@ import { sendEmail } from "../utils/notify.js";
 
 export const createMaterial = async (req, res, next) => {
   try {
-    const { title, description, subjectId, url, storageProvider } = req.body;
+    const {
+      title,
+      description,
+      subjectId,
+      url,
+      secureUrl,
+      publicId,
+      resourceType,
+      format,
+      version,
+      size,
+      originalFilename,
+      storageProvider,
+    } = req.body;
     const subject = await Subject.findById(subjectId);
     if (!subject) {
       throw createError(404, "Subject not found");
@@ -16,6 +29,13 @@ export const createMaterial = async (req, res, next) => {
       description,
       subject: subjectId,
       url,
+      secureUrl,
+      publicId,
+      resourceType,
+      format,
+      version,
+      size,
+      originalFilename,
       storageProvider,
       uploadedBy: req.user._id,
     });

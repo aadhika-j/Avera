@@ -11,11 +11,16 @@ export const handleUpload = async (req, res, next) => {
     if (!req.file) {
       throw createError(400, "File is required");
     }
+    const uploadFolder = process.env.CLOUDINARY_UPLOAD_FOLDER;
+    const resourceType = process.env.CLOUDINARY_UPLOAD_RESOURCE_TYPE;
+    if (!uploadFolder || !resourceType) {
+      throw createError(500, "Cloudinary upload env not configured");
+    }
     const cloudinary = configureCloudinary();
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: "avera/materials",
-        resource_type: "raw",
+        folder: uploadFolder,
+        resource_type: resourceType,
         access_mode: "public",
         use_filename: true,
         unique_filename: true,

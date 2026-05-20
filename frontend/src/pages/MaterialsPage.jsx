@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
+import { uploadToCloudinary } from "../services/upload";
 import { useAuth } from "../hooks/useAuth";
 
 const MaterialsPage = () => {
@@ -34,11 +35,8 @@ const MaterialsPage = () => {
     setEtaText("");
     const startedAt = Date.now();
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const { data: uploadResp } = await api.post("/uploads", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
+      const uploadResp = await uploadToCloudinary(file, {
+        onProgress: (event) => {
           const percent = Math.round((event.loaded * 100) / (event.total || 1));
           const elapsedMs = Date.now() - startedAt;
           const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
@@ -49,10 +47,17 @@ const MaterialsPage = () => {
           setEtaText(etaSeconds ? `${etaSeconds}s remaining` : "");
         },
       });
-      const url = uploadResp.url;
+      const url = uploadResp.secure_url;
       const { data } = await api.post("/materials", {
         ...form,
         url,
+        secureUrl: uploadResp.secure_url,
+        publicId: uploadResp.public_id,
+        resourceType: uploadResp.resource_type,
+        format: uploadResp.format,
+        version: uploadResp.version,
+        size: uploadResp.bytes,
+        originalFilename: uploadResp.original_filename,
         storageProvider: "cloudinary",
       });
       setMaterials((prev) => [data.material, ...prev]);

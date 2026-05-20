@@ -26,10 +26,18 @@ const AdminMaterialsPage = () => {
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadToCloudinary(file);
+      const uploadResp = await uploadToCloudinary(file);
+      const url = uploadResp.secure_url;
       const { data } = await api.post("/materials", {
         ...form,
         url,
+        secureUrl: uploadResp.secure_url,
+        publicId: uploadResp.public_id,
+        resourceType: uploadResp.resource_type,
+        format: uploadResp.format,
+        version: uploadResp.version,
+        size: uploadResp.bytes,
+        originalFilename: uploadResp.original_filename,
         storageProvider: "cloudinary",
       });
       setMaterials((prev) => [data.material, ...prev]);

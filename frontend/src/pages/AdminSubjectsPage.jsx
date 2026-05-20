@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
-import { uploadToCloudinary } from "../services/upload";
 
 const AdminSubjectsPage = () => {
   const { user } = useAuth();

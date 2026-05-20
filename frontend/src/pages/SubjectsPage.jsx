@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
+import { uploadToCloudinary } from "../services/upload";
 import { useAuth } from "../hooks/useAuth";
 
 const DEFAULT_SEMESTERS = [
@@ -125,28 +126,21 @@ const SubjectsPage = () => {
   };
 
   const buildCloudinaryUrl = (att) => {
+    const base = import.meta.env.VITE_CLOUDINARY_DELIVERY_BASE;
     const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    if (!cloud) return "";
+    if (!cloud || !base) return "";
     const publicId = att?.publicId;
     const format = att?.format;
     if (!publicId || !format) return "";
     const version = att?.version ? `v${att.version}/` : "";
     const type = att?.resourceType || "raw";
-    return `https://res.cloudinary.com/${cloud}/${type}/upload/${version}${publicId}.${format}`;
+    return `${base}/${cloud}/${type}/upload/${version}${publicId}.${format}`;
   };
 
   const pickLink = (att) => {
     const candidates = [att?.secureUrl, att?.secure_url, att?.url, att?.signedUrl, att?.link];
     const first = candidates.find((c) => typeof c === "string" && c.trim());
-    if (first) {
-      const cleaned = sanitizeLink(first);
-      const format = (inferFormat(att, cleaned) || "").toLowerCase();
-      const imageFormats = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"];
-      if (!imageFormats.includes(format) && cleaned.includes("/image/upload/")) {
-        return cleaned.replace("/image/upload/", "/raw/upload/");
-      }
-      return cleaned;
-    }
+    if (first) return sanitizeLink(first);
     const fallback = buildCloudinaryUrl(att);
     return sanitizeLink(fallback);
   };
@@ -163,7 +157,9 @@ const SubjectsPage = () => {
     const format = (inferFormat(att, link) || "").toLowerCase();
     const docTypes = ["doc", "docx", "ppt", "pptx", "xls", "xlsx"]; // force Google viewer for Office docs
     if (docTypes.includes(format)) {
-      return `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(link)}`;
+      const viewerBase = import.meta.env.VITE_DOC_PREVIEW_BASE;
+      if (!viewerBase) return link;
+      return `${viewerBase}?embedded=1&url=${encodeURIComponent(link)}`;
     }
     return link;
   };
@@ -182,12 +178,8 @@ const SubjectsPage = () => {
   const uploadFile = async (file) => {
     const startedAt = Date.now();
     setUploadProgress({ current: 0, eta: "", startedAt });
-    const formData = new FormData();
-    formData.append("file", file);
-    // Use axios for upload, as in MaterialsPage
-    const { data: uploadResp } = await api.post("/uploads", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      onUploadProgress: (event) => {
+    const uploadResp = await uploadToCloudinary(file, {
+      onProgress: (event) => {
         const percent = Math.round((event.loaded * 100) / (event.total || 1));
         const elapsedMs = Date.now() - startedAt;
         const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
@@ -221,7 +213,9 @@ const SubjectsPage = () => {
     setUploading(component._id);
     try {
       const upload = await uploadFile(file);
-      const uploadedUrl = sanitizeLink(upload.secure_url || upload.url || upload.signedUrl || upload.secureUrl);
+      const uploadedUrl = sanitizeLink(
+        upload.secure_url || upload.secureUrl || upload.url || upload.signedUrl
+      );
       if (!uploadedUrl) {
         throw new Error("Upload did not return a file URL");
       }
@@ -232,8 +226,8 @@ const SubjectsPage = () => {
           url: uploadedUrl,
           secureUrl: uploadedUrl,
           signedUrl: upload.signedUrl || uploadedUrl,
-          publicId: upload.publicId,
-          resourceType: upload.resourceType,
+          publicId: upload.public_id || upload.publicId,
+          resourceType: upload.resource_type || upload.resourceType,
           format: upload.format,
           version: upload.version,
           mimeType: file.type,
