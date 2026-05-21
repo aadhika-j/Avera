@@ -30,6 +30,46 @@ export const uploadMiddleware = (req, res, next) => {
   }
 };
 
+const parseResourceTypeFromUrl = (url) => {
+  if (!url) return null;
+  const match = url.match(/res\.cloudinary\.com\/[^/]+\/([^/]+)\/upload\//i);
+  return match?.[1] || null;
+};
+
+export const getSignedUrl = async (req, res, next) => {
+  try {
+    const { publicId, resourceType, format, version, url } = req.body || {};
+    if (!publicId) {
+      throw createError(400, "publicId is required");
+    }
+
+    const resolvedResourceType = resourceType || parseResourceTypeFromUrl(url);
+    if (!resolvedResourceType) {
+      throw createError(400, "resourceType is required");
+    }
+
+    const deliveryType = process.env.CLOUDINARY_DELIVERY_TYPE || "authenticated";
+    const ttlSeconds = Number(process.env.CLOUDINARY_SIGNED_URL_TTL_SEC) || 3600;
+    const options = {
+      secure: true,
+      sign_url: true,
+      resource_type: resolvedResourceType,
+      type: deliveryType,
+    };
+    if (format) options.format = format;
+    if (version) options.version = version;
+    if (ttlSeconds) {
+      options.expires_at = Math.floor(Date.now() / 1000) + ttlSeconds;
+    }
+
+    const cloudinary = configureCloudinary();
+    const signedUrl = cloudinary.url(publicId, options);
+    res.json({ url: signedUrl });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const handleUpload = async (req, res, next) => {
   try {
     if (!req.file) {

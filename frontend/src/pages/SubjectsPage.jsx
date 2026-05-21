@@ -30,6 +30,7 @@ const SubjectsPage = () => {
   const [pendingFiles, setPendingFiles] = useState({});
   const [copyMessage, setCopyMessage] = useState("");
   const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const { isCR } = useAuth();
 
   useEffect(() => {
@@ -175,18 +176,59 @@ const SubjectsPage = () => {
     return link;
   };
 
-  const openPreview = (att) => {
-    const rawUrl = pickLink(att);
-    if (!rawUrl) {
+  const fetchSignedUrl = async (att) => {
+    if (!att?.publicId) return null;
+    const payload = {
+      publicId: att.publicId,
+      resourceType: att.resourceType,
+      format: att.format,
+      version: att.version,
+      url: att.url || att.secureUrl || att.signedUrl,
+    };
+    const { data } = await api.post("/uploads/signed-url", payload);
+    return data?.url || null;
+  };
+
+  const openPreview = async (att) => {
+    setPreviewLoading(true);
+    const fallbackUrl = pickLink(att);
+    if (!fallbackUrl) {
       setFlashError("Preview unavailable");
+      setTimeout(() => setFlashError(""), 2000);
+      setPreviewLoading(false);
+      return;
+    }
+
+    try {
+      const signedUrl = await fetchSignedUrl(att);
+      const rawUrl = signedUrl || fallbackUrl;
+      const format = (inferFormat(att, rawUrl) || "").toLowerCase();
+      const imageFormats = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"];
+      const isImage = imageFormats.includes(format);
+      const url = isImage ? rawUrl : buildPreviewLink(att, rawUrl);
+      setPreview({ url, rawUrl, name: att?.name || "Attachment", isImage });
+    } catch (err) {
+      setFlashError("Failed to load preview");
+      setTimeout(() => setFlashError(""), 2000);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const downloadAttachment = async (att) => {
+    const fallbackUrl = pickLink(att);
+    if (!fallbackUrl) {
+      setFlashError("Download unavailable");
       setTimeout(() => setFlashError(""), 2000);
       return;
     }
-    const format = (inferFormat(att, rawUrl) || "").toLowerCase();
-    const imageFormats = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"];
-    const isImage = imageFormats.includes(format);
-    const url = isImage ? rawUrl : buildPreviewLink(att, rawUrl);
-    setPreview({ url, rawUrl, name: att?.name || "Attachment", isImage });
+    try {
+      const signedUrl = await fetchSignedUrl(att);
+      const url = signedUrl || fallbackUrl;
+      window.open(url, "_blank", "noopener");
+    } catch (err) {
+      window.open(fallbackUrl, "_blank", "noopener");
+    }
   };
 
   const closePreview = () => setPreview(null);
@@ -633,7 +675,11 @@ const SubjectsPage = () => {
               <h3 className="text-lg font-semibold text-slate-800">{preview.name}</h3>
             </div>
             <div className="border rounded bg-slate-50 overflow-hidden">
-              {preview.isImage ? (
+              {previewLoading ? (
+                <div className="h-[70vh] flex items-center justify-center text-slate-500">
+                  Loading preview...
+                </div>
+              ) : preview.isImage ? (
                 <img src={preview.url} alt={preview.name} className="w-full h-auto" />
               ) : (
                 <iframe
