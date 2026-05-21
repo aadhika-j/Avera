@@ -13,6 +13,7 @@ const MaterialsPage = () => {
   const [progress, setProgress] = useState(0);
   const [etaText, setEtaText] = useState("");
   const [flash, setFlash] = useState("");
+  const [flashError, setFlashError] = useState("");
   const { isCR } = useAuth();
 
   useEffect(() => {
@@ -33,41 +34,58 @@ const MaterialsPage = () => {
     setUploading(true);
     setProgress(0);
     setEtaText("");
+    setFlashError("");
     const startedAt = Date.now();
     try {
-      const uploadResp = await uploadToCloudinary(file, {
-        onProgress: (event) => {
-          const percent = Math.round((event.loaded * 100) / (event.total || 1));
-          const elapsedMs = Date.now() - startedAt;
-          const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
-          const remainingBytes = (event.total || 0) - event.loaded;
-          const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
-          const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
-          setProgress(percent);
-          setEtaText(etaSeconds ? `${etaSeconds}s remaining` : "");
-        },
-      });
-      const url = uploadResp.secure_url;
+      const onProgress = (event) => {
+        const percent = Math.round((event.loaded * 100) / (event.total || 1));
+        const elapsedMs = Date.now() - startedAt;
+        const bytesPerMs = event.loaded / Math.max(elapsedMs, 1);
+        const remainingBytes = (event.total || 0) - event.loaded;
+        const remainingMs = bytesPerMs ? remainingBytes / bytesPerMs : 0;
+        const etaSeconds = Number.isFinite(remainingMs) ? Math.max(0, Math.round(remainingMs / 1000)) : 0;
+        setProgress(percent);
+        setEtaText(etaSeconds ? `${etaSeconds}s remaining` : "");
+      };
+
+      let uploadResp;
+      try {
+        uploadResp = await uploadToCloudinary(file, { onProgress });
+      } catch (err) {
+        const formData = new FormData();
+        formData.append("file", file);
+        uploadResp = (
+          await api.post("/uploads", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+            onUploadProgress: onProgress,
+          })
+        ).data;
+      }
+
+      const url = uploadResp.secure_url || uploadResp.secureUrl || uploadResp.url;
       const { data } = await api.post("/materials", {
         ...form,
         url,
-        secureUrl: uploadResp.secure_url,
-        publicId: uploadResp.public_id,
-        resourceType: uploadResp.resource_type,
+        secureUrl: uploadResp.secure_url || uploadResp.secureUrl,
+        publicId: uploadResp.public_id || uploadResp.publicId,
+        resourceType: uploadResp.resource_type || uploadResp.resourceType,
         format: uploadResp.format,
         version: uploadResp.version,
-        size: uploadResp.bytes,
-        originalFilename: uploadResp.original_filename,
+        size: uploadResp.bytes || uploadResp.size,
+        originalFilename: uploadResp.original_filename || uploadResp.originalFilename,
         storageProvider: "cloudinary",
       });
       setMaterials((prev) => [data.material, ...prev]);
       setForm({ title: "", description: "", subjectId: "" });
       setFile(null);
       setFlash("Material uploaded successfully");
+    } catch (err) {
+      setFlashError(err?.message || "Failed to upload material");
     } finally {
       setUploading(false);
       setEtaText("");
       setTimeout(() => setFlash(""), 2000);
+      setTimeout(() => setFlashError(""), 3000);
     }
   };
 
@@ -83,6 +101,11 @@ const MaterialsPage = () => {
           {flash && (
             <div className="md:col-span-5 text-sm rounded bg-green-50 text-green-700 px-3 py-2 border border-green-200">
               {flash}
+            </div>
+          )}
+          {flashError && (
+            <div className="md:col-span-5 text-sm rounded bg-rose-50 text-rose-700 px-3 py-2 border border-rose-200">
+              {flashError}
             </div>
           )}
           <input
