@@ -6,8 +6,16 @@ export const notFound = (req, res, next) => {
 };
 
 export const errorHandler = (err, req, res, next) => {
-  const status = err.status || 500;
-  const message = err.message || "Internal server error";
+  let status = err.status || 500;
+  let message = err.message || "Internal server error";
+
+  if (err?.code === "LIMIT_FILE_SIZE") {
+    status = 413;
+    message = "File too large for upload";
+  } else if (err?.name === "MulterError") {
+    status = 400;
+    message = err.message || "Upload failed";
+  }
 
   if (process.env.NODE_ENV !== "test") {
     // Log only outside tests to keep console clean

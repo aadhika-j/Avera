@@ -29,6 +29,7 @@ const SubjectsPage = () => {
   const [flashError, setFlashError] = useState("");
   const [pendingFiles, setPendingFiles] = useState({});
   const [copyMessage, setCopyMessage] = useState("");
+  const [preview, setPreview] = useState(null);
   const { isCR } = useAuth();
 
   useEffect(() => {
@@ -119,6 +120,16 @@ const SubjectsPage = () => {
     "research",
   ];
 
+  const getMaxUploadBytes = () => {
+    const raw = import.meta.env.VITE_MAX_UPLOAD_MB;
+    const maxMb = Number(raw);
+    if (!Number.isFinite(maxMb) || maxMb <= 0) return null;
+    return Math.round(maxMb * 1024 * 1024);
+  };
+
+  const maxUploadBytes = getMaxUploadBytes();
+  const maxUploadMb = maxUploadBytes ? Math.round(maxUploadBytes / (1024 * 1024)) : null;
+
   const sanitizeLink = (rawLink) => {
     if (!rawLink || typeof rawLink !== "string") return "";
     const trimmed = rawLink.trim().replace(/^"|"$/g, "");
@@ -163,6 +174,22 @@ const SubjectsPage = () => {
     }
     return link;
   };
+
+  const openPreview = (att) => {
+    const rawUrl = pickLink(att);
+    if (!rawUrl) {
+      setFlashError("Preview unavailable");
+      setTimeout(() => setFlashError(""), 2000);
+      return;
+    }
+    const format = (inferFormat(att, rawUrl) || "").toLowerCase();
+    const imageFormats = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"];
+    const isImage = imageFormats.includes(format);
+    const url = isImage ? rawUrl : buildPreviewLink(att, rawUrl);
+    setPreview({ url, rawUrl, name: att?.name || "Attachment", isImage });
+  };
+
+  const closePreview = () => setPreview(null);
 
   const copyToClipboard = async (text) => {
     try {
@@ -435,7 +462,6 @@ const SubjectsPage = () => {
                               const link = pickLink(att);
                               const isValidLink = /^https?:\/\//i.test(link);
                               const filename = att.name || `attachment-${idx + 1}`;
-                              const previewLink = buildPreviewLink(att, link);
                               return (
                                 <div
                                   key={link || `${idx}`}
@@ -450,15 +476,14 @@ const SubjectsPage = () => {
                                   <div className="flex items-center gap-2 text-xs">
                                     {isValidLink ? (
                                       <>
-                                        <a
+                                        <button
+                                          type="button"
                                           className="text-primary underline"
-                                          href={previewLink}
-                                          target="_blank"
-                                          rel="noreferrer noopener"
+                                          onClick={() => openPreview(att)}
                                           title={link}
                                         >
                                           Preview
-                                        </a>
+                                        </button>
                                         <a
                                           className="text-primary underline"
                                           href={link}
@@ -517,9 +542,21 @@ const SubjectsPage = () => {
                               id={`${found._id}-file`}
                               type="file"
                               className="text-sm"
-                              onChange={(e) =>
-                                setPendingFiles((prev) => ({ ...prev, [found._id]: e.target.files?.[0] }))
-                              }
+                              onChange={(e) => {
+                                const selected = e.target.files?.[0];
+                                if (!selected) return;
+                                if (!maxUploadBytes) {
+                                  setFlashError("Upload limit not configured");
+                                  setTimeout(() => setFlashError(""), 2000);
+                                  return;
+                                }
+                                if (selected.size > maxUploadBytes) {
+                                  setFlashError(`File too large. Max ${maxUploadMb} MB.`);
+                                  setTimeout(() => setFlashError(""), 3000);
+                                  return;
+                                }
+                                setPendingFiles((prev) => ({ ...prev, [found._id]: selected }));
+                              }}
                               disabled={uploading === found._id}
                             />
                             {pendingFiles[found._id] && (
@@ -576,6 +613,45 @@ const SubjectsPage = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {preview && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 px-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl p-4 relative">
+            <button
+              type="button"
+              onClick={closePreview}
+              className="absolute right-3 top-3 text-slate-500 hover:text-slate-700"
+            >
+              ✕
+            </button>
+            <div className="mb-3">
+              <p className="text-sm text-slate-500">Preview</p>
+              <h3 className="text-lg font-semibold text-slate-800">{preview.name}</h3>
+            </div>
+            <div className="border rounded bg-slate-50 overflow-hidden">
+              {preview.isImage ? (
+                <img src={preview.url} alt={preview.name} className="w-full h-auto" />
+              ) : (
+                <iframe
+                  src={preview.url}
+                  title={preview.name}
+                  className="w-full h-[70vh]"
+                />
+              )}
+            </div>
+            <div className="mt-3 text-xs text-slate-600 flex items-center gap-3">
+              <a
+                className="text-primary underline"
+                href={preview.rawUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                Open in new tab
+              </a>
             </div>
           </div>
         </div>

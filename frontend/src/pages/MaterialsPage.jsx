@@ -16,6 +16,16 @@ const MaterialsPage = () => {
   const [flashError, setFlashError] = useState("");
   const { isCR } = useAuth();
 
+  const getMaxUploadBytes = () => {
+    const raw = import.meta.env.VITE_MAX_UPLOAD_MB;
+    const maxMb = Number(raw);
+    if (!Number.isFinite(maxMb) || maxMb <= 0) return null;
+    return Math.round(maxMb * 1024 * 1024);
+  };
+
+  const maxUploadBytes = getMaxUploadBytes();
+  const maxUploadMb = maxUploadBytes ? Math.round(maxUploadBytes / (1024 * 1024)) : null;
+
   useEffect(() => {
     const fetchData = async () => {
       const [{ data: matData }, { data: subjData }] = await Promise.all([
@@ -31,6 +41,14 @@ const MaterialsPage = () => {
   const submit = async (e) => {
     e.preventDefault();
     if (!file) return;
+    if (!maxUploadBytes) {
+      setFlashError("Upload limit not configured");
+      return;
+    }
+    if (file.size > maxUploadBytes) {
+      setFlashError(`File too large. Max ${maxUploadMb} MB.`);
+      return;
+    }
     setUploading(true);
     setProgress(0);
     setEtaText("");
@@ -138,7 +156,24 @@ const MaterialsPage = () => {
             type="file"
             accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png"
             className="border rounded px-3 py-2"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            onChange={(e) => {
+              const selected = e.target.files?.[0] || null;
+              if (!selected) {
+                setFile(null);
+                return;
+              }
+              if (!maxUploadBytes) {
+                setFlashError("Upload limit not configured");
+                setTimeout(() => setFlashError(""), 2000);
+                return;
+              }
+              if (selected.size > maxUploadBytes) {
+                setFlashError(`File too large. Max ${maxUploadMb} MB.`);
+                setTimeout(() => setFlashError(""), 3000);
+                return;
+              }
+              setFile(selected);
+            }}
             required
           />
           <button className="bg-primary text-white px-4 py-2 rounded" type="submit" disabled={uploading}>

@@ -2,9 +2,33 @@ import multer from "multer";
 import createError from "http-errors";
 import { configureCloudinary } from "../config/cloudinary.js";
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+const getMaxUploadBytes = () => {
+  const maxMb = Number(process.env.UPLOAD_MAX_MB);
+  if (!Number.isFinite(maxMb) || maxMb <= 0) {
+    return null;
+  }
+  return Math.round(maxMb * 1024 * 1024);
+};
 
-export const uploadMiddleware = upload.single("file");
+export const uploadMiddleware = (req, res, next) => {
+  try {
+    const maxBytes = getMaxUploadBytes();
+    if (!maxBytes) {
+      throw createError(500, "Upload size limit not configured");
+    }
+    const upload = multer({
+      storage: multer.memoryStorage(),
+      limits: { fileSize: maxBytes },
+    }).single("file");
+
+    upload(req, res, (err) => {
+      if (err) return next(err);
+      return next();
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const handleUpload = async (req, res, next) => {
   try {
@@ -17,7 +41,14 @@ export const handleUpload = async (req, res, next) => {
       throw createError(500, "Cloudinary upload env not configured");
     }
     const cloudinary = configureCloudinary();
-    const stream = cloudinary.uploader.upload_stream(
+    const largeThresholdMb = Number(process.env.CLOUDINARY_LARGE_UPLOAD_THRESHOLD_MB) || 95;
+    const largeThresholdBytes = Math.round(largeThresholdMb * 1024 * 1024);
+    const useLargeUpload = req.file.size >= largeThresholdBytes;
+    const uploader = useLargeUpload
+      ? cloudinary.uploader.upload_large_stream
+      : cloudinary.uploader.upload_stream;
+
+    const stream = uploader(
       {
         folder: uploadFolder,
         resource_type: resourceType,
@@ -36,6 +67,8 @@ export const handleUpload = async (req, res, next) => {
             resourceType: uploadResult.resource_type,
             format: uploadResult.format,
             version: uploadResult.version,
+            size: uploadResult.bytes,
+            originalFilename: uploadResult.original_filename,
           });
         }
       }
