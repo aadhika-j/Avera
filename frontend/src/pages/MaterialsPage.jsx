@@ -26,30 +26,6 @@ const MaterialsPage = () => {
   const maxUploadBytes = getMaxUploadBytes();
   const maxUploadMb = maxUploadBytes ? Math.round(maxUploadBytes / (1024 * 1024)) : null;
 
-  const fetchSignedUrl = async (material) => {
-    if (!material?.publicId) return null;
-    const payload = {
-      publicId: material.publicId,
-      resourceType: material.resourceType,
-      format: material.format,
-      version: material.version,
-      url: material.url || material.secureUrl,
-    };
-    const { data } = await api.post("/uploads/signed-url", payload);
-    return data?.url || null;
-  };
-
-  const openMaterialLink = async (material) => {
-    const fallbackUrl = material?.secureUrl || material?.url;
-    if (!fallbackUrl) return;
-    try {
-      const signedUrl = await fetchSignedUrl(material);
-      window.open(signedUrl || fallbackUrl, "_blank", "noopener");
-    } catch (err) {
-      window.open(fallbackUrl, "_blank", "noopener");
-    }
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       const [{ data: matData }, { data: subjData }] = await Promise.all([
@@ -229,13 +205,14 @@ const MaterialsPage = () => {
                 <Link className="text-primary underline" to={`/materials/${m._id}`}>
                   Details
                 </Link>
-                <button
-                  type="button"
+                <a
                   className="text-primary underline"
-                  onClick={() => openMaterialLink(m)}
+                  href={m.url}
+                  target="_blank"
+                  rel="noreferrer"
                 >
                   View
-                </button>
+                </a>
               </div>
             </div>
             <p className="text-sm text-slate-600 mt-2">{m.description}</p>

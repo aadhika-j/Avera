@@ -10,30 +10,6 @@ const MaterialDetailPage = () => {
   const [commentText, setCommentText] = useState("");
   const { user } = useAuth();
 
-  const fetchSignedUrl = async (material) => {
-    if (!material?.publicId) return null;
-    const payload = {
-      publicId: material.publicId,
-      resourceType: material.resourceType,
-      format: material.format,
-      version: material.version,
-      url: material.url || material.secureUrl,
-    };
-    const { data } = await api.post("/uploads/signed-url", payload);
-    return data?.url || null;
-  };
-
-  const openMaterialLink = async (material) => {
-    const fallbackUrl = material?.secureUrl || material?.url;
-    if (!fallbackUrl) return;
-    try {
-      const signedUrl = await fetchSignedUrl(material);
-      window.open(signedUrl || fallbackUrl, "_blank", "noopener");
-    } catch (err) {
-      window.open(fallbackUrl, "_blank", "noopener");
-    }
-  };
-
   const fetchComments = async () => {
     const { data } = await api.get(`/materials/${id}/comments`);
     setComments(data.comments || []);
@@ -73,13 +49,9 @@ const MaterialDetailPage = () => {
       <div className="bg-white border rounded p-4">
         <h1 className="text-2xl font-semibold text-slate-800">{material.title}</h1>
         <p className="text-slate-700">{material.description}</p>
-        <button
-          type="button"
-          className="text-primary underline"
-          onClick={() => openMaterialLink(material)}
-        >
+        <a className="text-primary underline" href={material.url} target="_blank" rel="noreferrer">
           View / Download
-        </button>
+        </a>
       </div>
 
       <div className="bg-white border rounded p-4 space-y-3">

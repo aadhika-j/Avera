@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate, authorize } from "../middlewares/auth.js";
-import { handleUpload, uploadMiddleware, getSignedUrl } from "../controllers/uploadController.js";
+import { handleUpload, uploadMiddleware } from "../controllers/uploadController.js";
 
 const router = Router();
 
@@ -11,7 +11,5 @@ router.post(
   uploadMiddleware,
   handleUpload
 );
-
-router.post("/signed-url", authenticate, getSignedUrl);
 
 export default router;
