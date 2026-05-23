@@ -187,8 +187,14 @@ const ChatPage = () => {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full max-h-[80vh]">
-      <h1 className="text-2xl font-semibold text-slate-800 mb-4">Class Chat</h1>
+    <div className="flex flex-col h-full max-h-[80vh] glass-panel rounded-3xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Live</p>
+          <h1 className="text-2xl font-semibold text-ink">Class Chat</h1>
+        </div>
+        <span className="text-xs text-slate-500">Stay in sync</span>
+      </div>
       <div ref={listRef} className="flex-1 overflow-y-auto space-y-3 flex flex-col">
         {messages.map((msg, idx) => {
           const senderId =

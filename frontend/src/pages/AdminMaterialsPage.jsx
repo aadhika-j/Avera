@@ -49,24 +49,27 @@ const AdminMaterialsPage = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-slate-800">Manage Materials</h1>
-      <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-white p-4 border rounded">
+    <div className="space-y-6">
+      <div>
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Admin</p>
+        <h1 className="text-3xl font-semibold text-ink">Manage Materials</h1>
+      </div>
+      <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-5 gap-3 glass-panel p-5 rounded-3xl">
         <input
-          className="border rounded px-3 py-2"
+          className="rounded-xl px-4 py-3 micro-input"
           placeholder="Title"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
           required
         />
         <input
-          className="border rounded px-3 py-2"
+          className="rounded-xl px-4 py-3 micro-input"
           placeholder="Description"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
         <select
-          className="border rounded px-3 py-2"
+          className="rounded-xl px-4 py-3 micro-input"
           value={form.subjectId}
           onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
           required
@@ -81,21 +84,21 @@ const AdminMaterialsPage = () => {
         <input
           type="file"
           accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png"
-          className="border rounded px-3 py-2"
+          className="rounded-xl px-4 py-3 micro-input"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
           required
         />
-        <button className="bg-primary text-white px-4 py-2 rounded" type="submit" disabled={uploading}>
+        <button className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg" type="submit" disabled={uploading}>
           {uploading ? "Uploading..." : "Upload"}
         </button>
       </form>
 
-      <div className="space-y-3">
+      <div className="grid gap-4">
         {materials.map((m) => (
-          <div key={m._id} className="bg-white border rounded p-4 shadow-sm">
+          <div key={m._id} className="neo-card p-5 hover-lift">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-semibold text-slate-800">{m.title}</p>
+                <p className="text-lg font-semibold text-ink">{m.title}</p>
                 <p className="text-sm text-slate-600">{m.subject?.name}</p>
               </div>
               <a className="text-primary underline" href={m.url} target="_blank" rel="noreferrer">

@@ -45,36 +45,36 @@ const MaterialDetailPage = () => {
   if (!material) return <p className="text-slate-600">Loading material...</p>;
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white border rounded p-4">
-        <h1 className="text-2xl font-semibold text-slate-800">{material.title}</h1>
-        <p className="text-slate-700">{material.description}</p>
+      <div className="space-y-6">
+        <div className="glass-panel rounded-3xl p-6">
+          <h1 className="text-2xl font-semibold text-ink">{material.title}</h1>
+          <p className="text-slate-600">{material.description}</p>
         <a className="text-primary underline" href={material.url} target="_blank" rel="noreferrer">
           View / Download
         </a>
       </div>
 
-      <div className="bg-white border rounded p-4 space-y-3">
-        <h2 className="text-xl font-semibold text-slate-800">Comments</h2>
-        <form onSubmit={submitComment} className="flex gap-2">
-          <input
-            className="border rounded px-3 py-2 flex-1"
-            placeholder="Add a comment"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-          />
-          <button className="bg-primary text-white px-4 py-2 rounded" type="submit">
+        <div className="glass-panel rounded-3xl p-6 space-y-3">
+          <h2 className="text-xl font-semibold text-ink">Comments</h2>
+          <form onSubmit={submitComment} className="flex gap-2">
+            <input
+              className="rounded-xl px-4 py-2 flex-1 micro-input"
+              placeholder="Add a comment"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <button className="micro-btn bg-primary text-white px-4 py-2 rounded-full" type="submit">
             Post
           </button>
         </form>
 
         <div className="space-y-2">
           {comments.map((c) => (
-            <div key={c._id} className={`border rounded p-3 ${c.isPinned ? "border-primary" : "border-slate-200"}`}>
+              <div key={c._id} className={`neo-card p-4 ${c.isPinned ? "ring-2 ring-primary/40" : ""}`}>
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">{c.author?.name || "User"}</p>
-                  <p className="text-sm text-slate-700">{c.content}</p>
+                    <p className="text-sm font-semibold text-ink">{c.author?.name || "User"}</p>
+                    <p className="text-sm text-slate-700">{c.content}</p>
                 </div>
                 {user && (user.role === "cr" || user.role === "admin") && (
                   <div className="flex gap-2 text-xs text-primary">

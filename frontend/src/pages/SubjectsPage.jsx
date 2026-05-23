@@ -327,30 +327,33 @@ const SubjectsPage = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-slate-800">Subjects</h1>
+    <div className="space-y-6">
+      <div>
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Academics</p>
+        <h1 className="text-3xl font-semibold text-ink">Subjects</h1>
+      </div>
 
       {isCR && (
         <form
           onSubmit={submit}
-          className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-4 border rounded"
+          className="grid grid-cols-1 md:grid-cols-4 gap-3 glass-panel p-5 rounded-3xl"
         >
           <input
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             placeholder="Name"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             required
           />
           <input
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             placeholder="Code"
             value={form.code}
             onChange={(e) => setForm({ ...form, code: e.target.value })}
             required
           />
           <select
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             value={form.semesterId}
             onChange={(e) => setForm({ ...form, semesterId: e.target.value })}
             required
@@ -361,7 +364,7 @@ const SubjectsPage = () => {
               </option>
             ))}
           </select>
-          <button className="bg-primary text-white px-4 py-2 rounded" type="submit">
+          <button className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg" type="submit">
             Add Subject
           </button>
         </form>
@@ -383,20 +386,20 @@ const SubjectsPage = () => {
                 setShowModal(true);
               }
             }}
-            className={`rounded-lg border shadow-sm text-left p-4 transition hover:-translate-y-0.5 hover:shadow-md bg-sky-900 text-white cursor-pointer ${
-              selectedSubject?._id === subject._id ? "ring-2 ring-sky-400" : ""
+            className={`neo-card text-left p-5 cursor-pointer hover-lift ${
+              selectedSubject?._id === subject._id ? "ring-2 ring-primary/40" : ""
             }`}
           >
-            <p className="text-sm text-sky-100">{subject.semester?.name}</p>
-            <p className="text-lg font-semibold">{subject.name}</p>
-            <p className="text-sky-100/80">Code: {subject.code}</p>
+            <p className="text-sm text-slate-500">{subject.semester?.name}</p>
+            <p className="text-lg font-semibold text-ink">{subject.name}</p>
+            <p className="text-slate-500">Code: {subject.code}</p>
             {isCR && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   remove(subject._id);
                 }}
-                className="text-rose-200 text-sm mt-2 underline"
+                className="text-rose-500 text-sm mt-2 underline"
                 type="button"
               >
                 Delete
@@ -408,7 +411,7 @@ const SubjectsPage = () => {
 
       {showModal && selectedSubject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl p-5 relative">
+          <div className="glass-panel rounded-3xl shadow-xl w-full max-w-4xl p-6 relative">
             <button
               type="button"
               onClick={() => {
@@ -422,7 +425,7 @@ const SubjectsPage = () => {
             </button>
             <div className="mb-4">
               <p className="text-sm text-slate-500">{selectedSubject.semester?.name}</p>
-              <h2 className="text-xl font-semibold text-slate-800">{selectedSubject.name}</h2>
+              <h2 className="text-2xl font-semibold text-ink">{selectedSubject.name}</h2>
               {flash && (
                 <div className="mt-2 rounded bg-green-50 text-green-700 text-sm px-3 py-2 border border-green-200">
                   {flash}
@@ -434,7 +437,7 @@ const SubjectsPage = () => {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {componentSlots.map((slot) => {
                 const found = components.find((c) => c.type === slot);
                 const label = formatLabel(slot);
@@ -442,9 +445,9 @@ const SubjectsPage = () => {
                 return (
                   <div
                     key={slot}
-                    className="border rounded-lg bg-white p-3 shadow-sm flex flex-col gap-2"
+                    className="neo-card p-4 flex flex-col gap-2"
                   >
-                    <p className="text-sm font-semibold text-slate-800">{slot}</p>
+                    <p className="text-sm font-semibold text-ink">{slot}</p>
                     {found ? (
                       <p className="text-sm text-slate-600">
                         {label} {formatDateOnly(found.deadline || found.createdAt)}
@@ -620,7 +623,7 @@ const SubjectsPage = () => {
 
       {preview && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 px-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl p-4 relative">
+          <div className="glass-panel rounded-3xl shadow-xl w-full max-w-3xl p-4 relative">
             <button
               type="button"
               onClick={closePreview}

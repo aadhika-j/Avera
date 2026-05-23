@@ -64,16 +64,19 @@ const ReminderDashboard = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-slate-800">Reminders</h1>
+    <div className="space-y-6">
+      <div>
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Planner</p>
+        <h1 className="text-3xl font-semibold text-ink">Reminders</h1>
+      </div>
 
       {isCR && (
         <form
           onSubmit={submit}
-          className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-white p-4 border rounded"
+          className="grid grid-cols-1 md:grid-cols-5 gap-3 glass-panel p-5 rounded-3xl"
         >
           <select
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             value={form.subjectId}
             onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
             required
@@ -86,7 +89,7 @@ const ReminderDashboard = () => {
             ))}
           </select>
           <select
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             value={form.type}
             onChange={(e) => setForm({ ...form, type: e.target.value })}
             required
@@ -99,18 +102,18 @@ const ReminderDashboard = () => {
           </select>
           <input
             type="datetime-local"
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             value={form.deadline}
             onChange={(e) => setForm({ ...form, deadline: e.target.value })}
             required
           />
           <input
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             placeholder="Description"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
-          <button className="bg-primary text-white px-4 py-2 rounded" type="submit">
+          <button className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg" type="submit">
             {editingId ? "Update" : "Create"}
           </button>
         </form>
@@ -119,10 +122,10 @@ const ReminderDashboard = () => {
       {upcoming.length === 0 ? (
         <p className="text-slate-600">No upcoming items.</p>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {upcoming.map((c) => (
-            <div key={c._id} className="bg-white border rounded p-4 shadow-sm">
-              <p className="text-lg font-semibold text-slate-800">{c.subject?.name}</p>
+            <div key={c._id} className="neo-card p-5 hover-lift">
+              <p className="text-lg font-semibold text-ink">{c.subject?.name}</p>
               <p className="text-sm text-slate-600">{typeLabels[c.type] || c.type}</p>
               <p className="text-sm text-slate-600">Due: {new Date(c.deadline).toLocaleString()}</p>
               <p className="text-sm text-slate-600">{c.description}</p>

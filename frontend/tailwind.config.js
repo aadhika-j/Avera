@@ -4,8 +4,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#2563eb",
-        accent: "#f59e0b",
+        primary: "#7c5cff",
+        primarySoft: "#c8b6ff",
+        accent: "#ffb4d9",
+        ink: "#1f1b33",
+        mist: "#f5f3ff",
+        glass: "rgba(255, 255, 255, 0.55)",
+        glassBorder: "rgba(255, 255, 255, 0.35)",
       },
     },
   },

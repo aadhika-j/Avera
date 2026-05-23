@@ -34,28 +34,31 @@ const AdminSubjectsPage = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-800">Manage Subjects</h1>
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Admin</p>
+          <h1 className="text-3xl font-semibold text-ink">Manage Subjects</h1>
+        </div>
         <span className="text-sm text-slate-500">Logged in as {user?.role}</span>
       </div>
-      <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-4 rounded border">
+      <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-4 gap-3 glass-panel p-5 rounded-3xl">
         <input
-          className="border rounded px-3 py-2"
+          className="rounded-xl px-4 py-3 micro-input"
           placeholder="Name"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
         />
         <input
-          className="border rounded px-3 py-2"
+          className="rounded-xl px-4 py-3 micro-input"
           placeholder="Code"
           value={form.code}
           onChange={(e) => setForm({ ...form, code: e.target.value })}
           required
         />
         <select
-          className="border rounded px-3 py-2"
+          className="rounded-xl px-4 py-3 micro-input"
           value={form.semesterId}
           onChange={(e) => setForm({ ...form, semesterId: e.target.value })}
           required
@@ -67,16 +70,16 @@ const AdminSubjectsPage = () => {
             </option>
           ))}
         </select>
-        <button className="bg-primary text-white px-4 py-2 rounded" type="submit">
+        <button className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg" type="submit">
           Add Subject
         </button>
       </form>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {subjects.map((subject) => (
-          <div key={subject._id} className="bg-white border rounded p-4 shadow-sm">
+          <div key={subject._id} className="neo-card p-5 hover-lift">
             <p className="text-sm text-slate-500">{subject.semester?.name}</p>
-            <p className="text-lg font-semibold text-slate-800">{subject.name}</p>
+            <p className="text-lg font-semibold text-ink">{subject.name}</p>
             <p className="text-slate-600">Code: {subject.code}</p>
             <button
               onClick={() => remove(subject._id)}

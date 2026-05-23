@@ -61,16 +61,17 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="bg-white p-8 rounded-lg shadow w-full max-w-md">
-        <h1 className="text-2xl font-semibold mb-4 text-primary">Create account</h1>
+    <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="glass-panel p-8 rounded-3xl w-full max-w-md">
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Get started</p>
+        <h1 className="text-3xl font-semibold mb-4 text-ink">Create account</h1>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-sm text-slate-600">Name</label>
             <input
               type="text"
               name="name"
-              className="w-full border rounded px-3 py-2"
+              className="w-full rounded-xl px-4 py-3 micro-input"
               value={form.name}
               onChange={handleChange}
               required
@@ -81,7 +82,7 @@ const RegisterPage = () => {
             <input
               type="email"
               name="email"
-              className="w-full border rounded px-3 py-2"
+              className="w-full rounded-xl px-4 py-3 micro-input"
               value={form.email}
               onChange={handleChange}
               required
@@ -93,14 +94,14 @@ const RegisterPage = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
-                className="w-full border rounded px-3 py-2 pr-10"
+                className="w-full rounded-xl px-4 py-3 pr-12 micro-input"
                 value={form.password}
                 onChange={handleChange}
                 required
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-2 text-sm text-slate-500"
+                className="absolute inset-y-0 right-3 text-sm text-slate-500"
                 onClick={() => setShowPassword((v) => !v)}
               >
                 {showPassword ? "Hide" : "Show"}
@@ -111,7 +112,7 @@ const RegisterPage = () => {
             <label className="block text-sm text-slate-600">Semester</label>
             <select
               name="semester"
-              className="w-full border rounded px-3 py-2"
+              className="w-full rounded-xl px-4 py-3 micro-input"
               value={form.semester}
               onChange={handleChange}
               required
@@ -127,7 +128,7 @@ const RegisterPage = () => {
             <label className="block text-sm text-slate-600">Role</label>
             <select
               name="role"
-              className="w-full border rounded px-3 py-2"
+              className="w-full rounded-xl px-4 py-3 micro-input"
               value={form.role}
               onChange={handleChange}
             >
@@ -138,7 +139,7 @@ const RegisterPage = () => {
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <button
             type="submit"
-            className="w-full bg-primary text-white py-2 rounded hover:bg-blue-700"
+            className="w-full micro-btn bg-primary text-white py-3 rounded-full shadow-lg"
           >
             Register
           </button>

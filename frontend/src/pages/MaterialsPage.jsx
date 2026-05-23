@@ -108,39 +108,42 @@ const MaterialsPage = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-slate-800">Study Materials</h1>
+    <div className="space-y-6">
+      <div>
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Library</p>
+        <h1 className="text-3xl font-semibold text-ink">Study Materials</h1>
+      </div>
 
       {isCR && (
         <form
           onSubmit={submit}
-          className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-white p-4 border rounded"
+          className="grid grid-cols-1 md:grid-cols-5 gap-3 glass-panel p-5 rounded-3xl"
         >
           {flash && (
-            <div className="md:col-span-5 text-sm rounded bg-green-50 text-green-700 px-3 py-2 border border-green-200">
+            <div className="md:col-span-5 text-sm rounded-2xl bg-green-50 text-green-700 px-3 py-2 border border-green-200">
               {flash}
             </div>
           )}
           {flashError && (
-            <div className="md:col-span-5 text-sm rounded bg-rose-50 text-rose-700 px-3 py-2 border border-rose-200">
+            <div className="md:col-span-5 text-sm rounded-2xl bg-rose-50 text-rose-700 px-3 py-2 border border-rose-200">
               {flashError}
             </div>
           )}
           <input
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             placeholder="Title"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             required
           />
           <input
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             placeholder="Description"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
           <select
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             value={form.subjectId}
             onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
             required
@@ -155,7 +158,7 @@ const MaterialsPage = () => {
           <input
             type="file"
             accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png"
-            className="border rounded px-3 py-2"
+            className="rounded-xl px-4 py-3 micro-input"
             onChange={(e) => {
               const selected = e.target.files?.[0] || null;
               if (!selected) {
@@ -176,11 +179,15 @@ const MaterialsPage = () => {
             }}
             required
           />
-          <button className="bg-primary text-white px-4 py-2 rounded" type="submit" disabled={uploading}>
+          <button
+            className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg"
+            type="submit"
+            disabled={uploading}
+          >
             {uploading ? "Uploading..." : "Upload"}
           </button>
           {uploading && (
-            <div className="md:col-span-5 h-2 bg-slate-200 rounded overflow-hidden">
+            <div className="md:col-span-5 h-2 bg-slate-200 rounded-full overflow-hidden">
               <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
             </div>
           )}
@@ -193,13 +200,13 @@ const MaterialsPage = () => {
         </form>
       )}
 
-      <div className="space-y-3">
+      <div className="grid gap-4">
         {materials.map((m) => (
-          <div key={m._id} className="bg-white border rounded p-4 shadow-sm">
+          <div key={m._id} className="neo-card p-5 hover-lift">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-lg font-semibold text-slate-800">{m.title}</p>
-                <p className="text-sm text-slate-600">{m.subject?.name}</p>
+                <p className="text-lg font-semibold text-ink">{m.title}</p>
+                <p className="text-sm text-slate-500">{m.subject?.name}</p>
               </div>
               <div className="flex gap-3 text-sm">
                 <Link className="text-primary underline" to={`/materials/${m._id}`}>
