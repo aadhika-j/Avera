@@ -1,8 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "../components/ThemeToggle.jsx";
 
 const LandingPage = () => (
-  <div className="min-h-screen bg-mist text-ink">
+  <div className="min-h-screen text-ink">
     <div className="relative overflow-hidden">
       <div className="absolute -top-24 -right-20 h-64 w-64 rounded-full bg-primary/30 blur-3xl" />
       <div className="absolute top-40 -left-24 h-72 w-72 rounded-full bg-pink-200/40 blur-3xl" />
@@ -18,12 +19,15 @@ const LandingPage = () => (
             <a href="#docs" className="hover:text-primary transition">Docs</a>
             <a href="#community" className="hover:text-primary transition">Community</a>
           </div>
-          <Link
-            to="/login"
-            className="micro-btn bg-primary text-white px-4 py-2 rounded-full shadow-lg"
-          >
-            Get started
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              to="/login"
+              className="micro-btn bg-primary text-white px-4 py-2 rounded-full shadow-lg"
+            >
+              Get started
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -47,7 +51,7 @@ const LandingPage = () => (
             </Link>
             <Link
               to="/login"
-              className="micro-btn border border-primary/30 text-primary px-5 py-3 rounded-full bg-white/70"
+              className="micro-btn glass-btn border border-primary/30 text-primary px-5 py-3 rounded-full"
             >
               Sign in
             </Link>

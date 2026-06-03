@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import ThemeToggle from "../components/ThemeToggle.jsx";
 import api from "../services/api";
 
 const baseLinks = [
@@ -93,10 +94,11 @@ const DashboardLayout = ({ children }) => {
           Student Academic Reminder
         </Link>
         <div className="flex items-center gap-3 text-sm">
+          <ThemeToggle />
           <span className="text-slate-600">{user?.name}</span>
           <button
             onClick={logout}
-            className="micro-btn text-primary border border-primary/30 px-3 py-1 rounded-full bg-white/70"
+            className="micro-btn glass-btn text-primary border border-primary/30 px-3 py-1 rounded-full"
             type="button"
           >
             Logout
@@ -113,7 +115,7 @@ const DashboardLayout = ({ children }) => {
               className={({ isActive }) =>
                 `relative flex items-center justify-between px-4 py-3 rounded-2xl hover-lift transition ${
                   isActive
-                    ? "bg-white/80 text-primary shadow"
+                    ? "glass-active text-primary shadow"
                     : "text-slate-600 hover:text-primary"
                 }`
               }

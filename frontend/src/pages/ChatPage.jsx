@@ -242,7 +242,7 @@ const ChatPage = () => {
                       <div key={att.url} className="flex items-center gap-2 text-sm">
                         <span className="text-slate-600">{att.name || att.type || "Attachment"}</span>
                         <a
-                          className="px-2 py-1 rounded bg-white/60 text-primary border border-blue-200"
+                          className="glass-chip text-primary px-2 py-1 rounded"
                           href={att.url}
                           target="_blank"
                           rel="noreferrer"
@@ -250,7 +250,7 @@ const ChatPage = () => {
                           Preview
                         </a>
                         <a
-                          className="px-2 py-1 rounded bg-blue-500 text-white"
+                          className="micro-btn bg-primary text-white px-2 py-1 rounded"
                           href={att.url}
                           download
                         >
@@ -281,18 +281,18 @@ const ChatPage = () => {
         <div className="relative">
           <button
             type="button"
-            className="h-10 w-10 rounded-full border border-slate-200 bg-white text-xl"
+            className="h-10 w-10 rounded-full glass-chip text-xl"
             onClick={() => setShowEmojis((v) => !v)}
           >
             😊
           </button>
           {showEmojis && (
-            <div className="absolute z-20 bottom-12 left-0 w-80 bg-white border rounded-lg shadow-xl p-3">
+            <div className="absolute z-20 bottom-12 left-0 w-80 glass-panel rounded-2xl shadow-xl p-3">
               <div className="flex items-center gap-2 mb-2 overflow-x-auto whitespace-nowrap text-xs text-slate-700">
                 {"Recent" && (
                   <button
                     type="button"
-                    className={`px-2 py-1 rounded ${emojiCategory === "Recent" ? "bg-blue-100 text-blue-700" : "bg-slate-100"}`}
+                    className={`px-2 py-1 rounded glass-chip ${emojiCategory === "Recent" ? "glass-chip-active" : ""}`}
                     onClick={() => setEmojiCategory("Recent")}
                   >
                     Recent
@@ -302,7 +302,7 @@ const ChatPage = () => {
                   <button
                     key={cat}
                     type="button"
-                    className={`px-2 py-1 rounded ${emojiCategory === cat ? "bg-blue-100 text-blue-700" : "bg-slate-100"}`}
+                    className={`px-2 py-1 rounded glass-chip ${emojiCategory === cat ? "glass-chip-active" : ""}`}
                     onClick={() => setEmojiCategory(cat)}
                   >
                     {cat}
@@ -311,7 +311,7 @@ const ChatPage = () => {
               </div>
               <input
                 type="text"
-                className="w-full border rounded px-2 py-1 text-sm mb-2"
+                className="w-full micro-input rounded-xl px-3 py-2 text-sm mb-2"
                 placeholder="Search emojis"
                 value={emojiSearch}
                 onChange={(e) => setEmojiSearch(e.target.value)}
@@ -322,7 +322,7 @@ const ChatPage = () => {
                     <button
                       key={`${emoji}-${emojiCategory}`}
                       type="button"
-                      className="text-xl flex items-center justify-center rounded hover:bg-slate-100 transition"
+                      className="text-xl flex items-center justify-center rounded glass-emoji"
                       onClick={() => insertEmoji(emoji)}
                     >
                       {emoji}
@@ -335,14 +335,14 @@ const ChatPage = () => {
         </div>
         <input
           id="chat-input-box"
-          className="border rounded px-3 py-2 flex-1"
+          className="micro-input rounded-xl px-4 py-3 flex-1"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Type a message"
         />
         <button
           onClick={sendMessage}
-          className="bg-primary text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="micro-btn bg-primary text-white px-4 py-2 rounded-full shadow-lg"
           type="button"
         >
           Send

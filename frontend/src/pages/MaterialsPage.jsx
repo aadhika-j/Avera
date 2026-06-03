@@ -120,12 +120,12 @@ const MaterialsPage = () => {
           className="grid grid-cols-1 md:grid-cols-5 gap-3 glass-panel p-5 rounded-3xl"
         >
           {flash && (
-            <div className="md:col-span-5 text-sm rounded-2xl bg-green-50 text-green-700 px-3 py-2 border border-green-200">
+            <div className="md:col-span-5 text-sm rounded-2xl glass-toast glass-toast-success px-3 py-2">
               {flash}
             </div>
           )}
           {flashError && (
-            <div className="md:col-span-5 text-sm rounded-2xl bg-rose-50 text-rose-700 px-3 py-2 border border-rose-200">
+            <div className="md:col-span-5 text-sm rounded-2xl glass-toast glass-toast-error px-3 py-2">
               {flashError}
             </div>
           )}

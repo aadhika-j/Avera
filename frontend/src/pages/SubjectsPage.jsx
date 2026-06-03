@@ -427,12 +427,12 @@ const SubjectsPage = () => {
               <p className="text-sm text-slate-500">{selectedSubject.semester?.name}</p>
               <h2 className="text-2xl font-semibold text-ink">{selectedSubject.name}</h2>
               {flash && (
-                <div className="mt-2 rounded bg-green-50 text-green-700 text-sm px-3 py-2 border border-green-200">
+                <div className="mt-2 rounded text-sm px-3 py-2 glass-toast glass-toast-success">
                   {flash}
                 </div>
               )}
               {flashError && (
-                <div className="mt-2 rounded bg-rose-50 text-rose-700 text-sm px-3 py-2 border border-rose-200">
+                <div className="mt-2 rounded text-sm px-3 py-2 glass-toast glass-toast-error">
                   {flashError}
                 </div>
               )}
@@ -468,7 +468,7 @@ const SubjectsPage = () => {
                               return (
                                 <div
                                   key={link || `${idx}`}
-                                  className="flex items-center justify-between text-sm bg-slate-50 border rounded px-2 py-1"
+                                  className="flex items-center justify-between text-sm glass-chip rounded px-2 py-1"
                                 >
                                   <div className="flex items-center gap-2 overflow-hidden">
                                     <span className="text-slate-500">📎</span>
@@ -595,7 +595,7 @@ const SubjectsPage = () => {
                             <div className="space-y-1">
                               <p className="text-xs text-slate-600">Message (optional)</p>
                               <textarea
-                                className="w-full border rounded px-2 py-1 text-sm"
+                                className="w-full micro-input rounded-xl px-3 py-2 text-sm"
                                 rows={2}
                                 value={noteDrafts[found._id] ?? ""}
                                 onChange={(e) => handleNoteChange(found._id, e.target.value)}
@@ -635,7 +635,7 @@ const SubjectsPage = () => {
               <p className="text-sm text-slate-500">Preview</p>
               <h3 className="text-lg font-semibold text-slate-800">{preview.name}</h3>
             </div>
-            <div className="border rounded bg-slate-50 overflow-hidden">
+            <div className="glass-panel rounded-2xl overflow-hidden">
               {preview.isImage ? (
                 <img src={preview.url} alt={preview.name} className="w-full h-auto" />
               ) : (
