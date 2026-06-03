@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
-import { formatDateTime } from "../utils/dateFormat";
+import { formatDateTime, toDatetimeLocalIST, fromDatetimeLocalIST } from "../utils/dateFormat";
 
 const typeLabels = {
   assignment1: "Assignment 1",
@@ -41,10 +41,15 @@ const ReminderDashboard = () => {
 
   const submit = async (e) => {
     e.preventDefault();
+    const payload = { ...form };
+    if (payload.deadline) {
+      payload.deadline = fromDatetimeLocalIST(payload.deadline);
+    }
+    
     if (editingId) {
-      await api.put(`/components/${editingId}`, form);
+      await api.put(`/components/${editingId}`, payload);
     } else {
-      await api.post("/components", form);
+      await api.post("/components", payload);
     }
     await refreshUpcoming();
     setForm({ subjectId: "", type: "assignment1", deadline: "", description: "" });
@@ -139,7 +144,7 @@ const ReminderDashboard = () => {
                       setForm({
                         subjectId: c.subject?._id || "",
                         type: c.type,
-                        deadline: c.deadline ? new Date(c.deadline).toISOString().slice(0, 16) : "",
+                        deadline: c.deadline ? toDatetimeLocalIST(c.deadline) : "",
                         description: c.description || "",
                       });
                     }}

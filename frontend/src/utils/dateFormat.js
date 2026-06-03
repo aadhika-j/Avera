@@ -113,3 +113,37 @@ export const ensureAbsoluteUrl = (url) => {
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
 };
+
+/**
+ * Converts a UTC ISO string to a datetime-local string (YYYY-MM-DDTHH:mm) in IST.
+ * This is used for populating <input type="datetime-local"> so it shows the exact IST time.
+ */
+export const toDatetimeLocalIST = (isoString) => {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  const utc = d.getTime();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(utc + istOffset);
+  return istDate.toISOString().slice(0, 16);
+};
+
+/**
+ * Converts a datetime-local string (YYYY-MM-DDTHH:mm) in IST to a UTC ISO string.
+ * This ensures that when a user enters 23:00 IST, it gets stored accurately in UTC.
+ */
+export const fromDatetimeLocalIST = (localString) => {
+  if (!localString) return "";
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const utcDateAsIfIST = new Date(localString + "Z");
+  const actualUTC = new Date(utcDateAsIfIST.getTime() - istOffset);
+  return actualUTC.toISOString();
+};
+
+/**
+ * Returns a simple string representing the date in IST (e.g., "03/06/2026")
+ * Useful for grouping items by day boundaries in IST.
+ */
+export const getISTDateString = (isoString) => {
+  if (!isoString) return "";
+  return new Date(isoString).toLocaleDateString("en-IN", { timeZone: IST });
+};

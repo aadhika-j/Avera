@@ -38,12 +38,17 @@ export const sendWhatsapp = async (to, body) => {
  */
 export const sendEmail = async (to, subject, text, html) => {
   if (!to) return;
-  const transporter = mailer();
-  await transporter.sendMail({
-    from: `"AVERA" <${process.env.SMTP_USER}>`,
-    to,
-    subject,
-    text,
-    ...(html ? { html } : {}),
-  });
+  try {
+    const transporter = mailer();
+    await transporter.sendMail({
+      from: `"AVERA" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      text,
+      ...(html ? { html } : {}),
+    });
+    console.log(`[Email] Sent successfully to ${to} (Subject: "${subject}")`);
+  } catch (error) {
+    console.error(`[Email] Failed to send to ${to}:`, error.message);
+  }
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
-import { formatTimeIST, formatDateLabel } from "../utils/dateFormat";
+import { formatTimeIST, formatDateLabel, getISTDateString } from "../utils/dateFormat";
 
 const socket = io(import.meta.env.VITE_API_BASE?.replace("/api", "") || "http://localhost:5000");
 
@@ -188,7 +188,7 @@ const ChatPage = () => {
 
           const prevMsg = messages[idx - 1];
           const showDateLabel = !prevMsg ||
-            new Date(msg.createdAt).toDateString() !== new Date(prevMsg.createdAt).toDateString();
+            getISTDateString(msg.createdAt) !== getISTDateString(prevMsg.createdAt);
 
           return (
             <React.Fragment key={msg._id}>
