@@ -437,7 +437,7 @@ const SubjectsPage = () => {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4 max-h-[70vh] overflow-y-auto pr-1">
               {componentSlots.map((slot) => {
                 const found = components.find((c) => c.type === slot);
                 const label = formatLabel(slot);
