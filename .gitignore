@@ -4,3 +4,6 @@ build/
 .env
 frontend/node_modules
 backend/node_modules
+notes.txt
+instructions.txt
+.github
