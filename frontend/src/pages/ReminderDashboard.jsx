@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { formatDateTime } from "../utils/dateFormat";
 
 const typeLabels = {
   assignment1: "Assignment 1",
@@ -127,7 +128,7 @@ const ReminderDashboard = () => {
             <div key={c._id} className="neo-card p-5 hover-lift">
               <p className="text-lg font-semibold text-ink">{c.subject?.name}</p>
               <p className="text-sm text-slate-600">{typeLabels[c.type] || c.type}</p>
-              <p className="text-sm text-slate-600">Due: {new Date(c.deadline).toLocaleString()}</p>
+              <p className="text-sm text-slate-600">Due: {formatDateTime(c.deadline)}</p>
               <p className="text-sm text-slate-600">{c.description}</p>
               {isCR && (
                 <div className="flex gap-3 text-xs text-primary mt-2">

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { uploadToCloudinary } from "../services/upload";
 import { useAuth } from "../hooks/useAuth";
+import { formatDateShort } from "../utils/dateFormat";
 
 const DEFAULT_SEMESTERS = [
   { value: "", label: "Select semester" },
@@ -102,14 +103,7 @@ const SubjectsPage = () => {
     return "To be submitted on";
   };
 
-  const formatDateOnly = (value) => {
-    if (!value) return "";
-    return new Date(value).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const formatDateOnly = formatDateShort;
 
   const componentSlots = [
     "assignment1",

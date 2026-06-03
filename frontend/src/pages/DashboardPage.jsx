@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { formatDateTime } from "../utils/dateFormat";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -112,7 +113,7 @@ const DashboardPage = () => {
                   <p className="font-semibold text-ink">{item.subject?.name}</p>
                   <p className="text-sm text-slate-500">{item.type}</p>
                   <p className="text-xs text-slate-400">
-                    {item.deadline ? new Date(item.deadline).toLocaleString() : ""}
+                    {item.deadline ? formatDateTime(item.deadline) : ""}
                   </p>
                 </div>
               ))

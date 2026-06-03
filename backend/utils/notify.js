@@ -31,8 +31,19 @@ export const sendWhatsapp = async (to, body) => {
   });
 };
 
-export const sendEmail = async (to, subject, text) => {
+/**
+ * Send an email.  When `html` is supplied the recipient will see the themed
+ * HTML version; the plain-text `text` acts as a fallback for mail clients
+ * that do not render HTML.
+ */
+export const sendEmail = async (to, subject, text, html) => {
   if (!to) return;
   const transporter = mailer();
-  await transporter.sendMail({ from: process.env.SMTP_USER, to, subject, text });
+  await transporter.sendMail({
+    from: `"AVERA" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    text,
+    ...(html ? { html } : {}),
+  });
 };

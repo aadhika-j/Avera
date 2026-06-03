@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { formatTimeIST, formatDateLabel } from "../utils/dateFormat";
 
 const socket = io(import.meta.env.VITE_API_BASE?.replace("/api", "") || "http://localhost:5000");
 
@@ -65,28 +66,9 @@ const ChatPage = () => {
     setShowEmojis(false);
   };
 
-  const formatTime = (isoString) => {
-    if (!isoString) return "";
-    const d = new Date(isoString);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  const formatTime = formatTimeIST;
 
-  const formatDateLabel = (isoString) => {
-    const d = new Date(isoString);
-    const now = new Date();
-
-    const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const dayMs = 24 * 60 * 60 * 1000;
-
-    const diffDays = Math.floor((startOfDay(now) - startOfDay(d)) / dayMs);
-
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) {
-      return d.toLocaleDateString(undefined, { weekday: "long" });
-    }
-    return d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
-  };
+  const chatDateLabel = formatDateLabel;
 
   const addMessage = (incoming, replaceId) => {
     setMessages((prev) => {
@@ -213,7 +195,7 @@ const ChatPage = () => {
               {showDateLabel && (
                 <div className="flex justify-center mt-2 mb-1">
                   <span className="px-3 py-1 rounded-full bg-slate-200 text-xs text-slate-600">
-                    {formatDateLabel(msg.createdAt)}
+                    {chatDateLabel(msg.createdAt)}
                   </span>
                 </div>
               )}

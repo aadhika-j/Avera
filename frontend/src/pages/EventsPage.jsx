@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { formatDateDMY, ensureAbsoluteUrl } from "../utils/dateFormat";
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -79,14 +80,14 @@ const EventsPage = () => {
               <div>
                 <p className="text-lg font-semibold text-ink">{event.name}</p>
                 <p className="text-sm text-slate-600">
-                  {new Date(event.date).toLocaleDateString()} - {event.description}
+                  {formatDateDMY(event.date)} - {event.description}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2">
                 {event.registrationLink && (
                   <a
                     className="text-primary underline"
-                    href={event.registrationLink}
+                    href={ensureAbsoluteUrl(event.registrationLink)}
                     target="_blank"
                     rel="noreferrer"
                   >
