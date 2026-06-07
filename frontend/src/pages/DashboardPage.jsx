@@ -1,48 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import useSWR from "swr";
 import { formatDateTime } from "../utils/dateFormat";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    materials: 0,
-    reminders: 0,
-    events: 0,
-    chat: 0,
-  });
-  const [latestMaterials, setLatestMaterials] = useState([]);
-  const [upcoming, setUpcoming] = useState([]);
+  const { data: materialsData, isLoading: mLoading } = useSWR("/materials");
+  const { data: remindersData, isLoading: rLoading } = useSWR("/components/upcoming");
+  const { data: eventsData, isLoading: eLoading } = useSWR("/events");
+  const { data: chatData, isLoading: cLoading } = useSWR("/chat");
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [materialsRes, remindersRes, eventsRes, chatRes] = await Promise.all([
-          api.get("/materials"),
-          api.get("/components/upcoming"),
-          api.get("/events"),
-          api.get("/chat"),
-        ]);
-        const materials = materialsRes.data?.materials || [];
-        const reminders = remindersRes.data?.components || [];
-        const events = eventsRes.data?.events || [];
-        const chats = chatRes.data?.messages || [];
-        setStats({
-          materials: materials.length,
-          reminders: reminders.length,
-          events: events.length,
-          chat: chats.length,
-        });
-        setLatestMaterials(materials.slice(0, 3));
-        setUpcoming(reminders.slice(0, 3));
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const materials = materialsData?.materials || [];
+  const reminders = remindersData?.components || [];
+  const events = eventsData?.events || [];
+  const chats = chatData?.messages || [];
+
+  const loading = mLoading || rLoading || eLoading || cLoading;
+
+  const stats = {
+    materials: materials.length,
+    reminders: reminders.length,
+    events: events.length,
+    chat: chats.length,
+  };
+
+  const latestMaterials = materials.slice(0, 3);
+  const upcoming = reminders.slice(0, 3);
 
   const cards = [
     { label: "Materials", value: stats.materials, to: "/materials" },

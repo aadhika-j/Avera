@@ -1,33 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import useSWR from "swr";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { formatDateDMY, ensureAbsoluteUrl } from "../utils/dateFormat";
+import { PageLoader, ButtonSpinner } from "../components/Spinner";
 
 const EventsPage = () => {
-  const [events, setEvents] = useState([]);
+  const { data: eventsData, mutate: mutateEvents } = useSWR("/events");
+  const events = eventsData?.events || [];
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", date: "", description: "", registrationLink: "" });
   const { isCR } = useAuth();
 
-  const load = async () => {
-    const { data } = await api.get("/events");
-    setEvents(data.events || []);
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
   const submit = async (e) => {
     e.preventDefault();
-    await api.post("/events", form);
-    await load();
-    setForm({ name: "", date: "", description: "", registrationLink: "" });
+    setIsSubmitting(true);
+    try {
+      await api.post("/events", form);
+      mutateEvents();
+      setForm({ name: "", date: "", description: "", registrationLink: "" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const remove = async (id) => {
     await api.delete(`/events/${id}`);
-    setEvents((prev) => prev.filter((ev) => ev._id !== id));
+    mutateEvents();
   };
+
+  if (!eventsData && !events.length) {
+    return <PageLoader />;
+  }
 
   return (
     <div className="space-y-6">
@@ -67,8 +71,13 @@ const EventsPage = () => {
             value={form.registrationLink}
             onChange={(e) => setForm({ ...form, registrationLink: e.target.value })}
           />
-          <button className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg" type="submit">
-            Save
+          <button 
+            className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg flex items-center justify-center" 
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? <ButtonSpinner /> : null}
+            {isSubmitting ? "Saving..." : "Save"}
           </button>
         </form>
       )}

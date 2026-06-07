@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import useSWR from "swr";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { formatDateTime, toDatetimeLocalIST, fromDatetimeLocalIST } from "../utils/dateFormat";
+import { PageLoader, ButtonSpinner } from "../components/Spinner";
 
 const typeLabels = {
   assignment1: "Assignment 1",
@@ -13,60 +15,50 @@ const typeLabels = {
 };
 
 const ReminderDashboard = () => {
-  const [upcoming, setUpcoming] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [subjects, setSubjects] = useState([]);
+  const { data: upcomingData, mutate: mutateUpcoming } = useSWR("/components/upcoming");
+  const upcoming = upcomingData?.components || [];
+
+  const { data: subjectsData } = useSWR("/subjects");
+  const subjects = subjectsData?.subjects || [];
+
   const [form, setForm] = useState({ subjectId: "", type: "assignment1", deadline: "", description: "" });
   const [editingId, setEditingId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { isCR } = useAuth();
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const [{ data: compData }, { data: subjData }] = await Promise.all([
-        api.get("/components/upcoming"),
-        api.get("/subjects"),
-      ]);
-      setUpcoming(compData.components || []);
-      setSubjects(subjData.subjects || []);
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  const refreshUpcoming = async () => {
-    const { data } = await api.get("/components/upcoming");
-    setUpcoming(data.components || []);
-  };
 
   const submit = async (e) => {
     e.preventDefault();
-    const payload = { ...form };
-    if (payload.deadline) {
-      payload.deadline = fromDatetimeLocalIST(payload.deadline);
+    setIsSubmitting(true);
+    try {
+      const payload = { ...form };
+      if (payload.deadline) {
+        payload.deadline = fromDatetimeLocalIST(payload.deadline);
+      }
+      
+      if (editingId) {
+        await api.put(`/components/${editingId}`, payload);
+      } else {
+        await api.post("/components", payload);
+      }
+      mutateUpcoming();
+      setForm({ subjectId: "", type: "assignment1", deadline: "", description: "" });
+      setEditingId(null);
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    if (editingId) {
-      await api.put(`/components/${editingId}`, payload);
-    } else {
-      await api.post("/components", payload);
-    }
-    await refreshUpcoming();
-    setForm({ subjectId: "", type: "assignment1", deadline: "", description: "" });
-    setEditingId(null);
   };
 
   const remove = async (id) => {
     await api.delete(`/components/${id}`);
-    setUpcoming((prev) => prev.filter((c) => c._id !== id));
+    mutateUpcoming();
     if (editingId === id) {
       setEditingId(null);
       setForm({ subjectId: "", type: "assignment1", deadline: "", description: "" });
     }
   };
 
-  if (loading) {
-    return <p className="text-slate-600">Loading reminders...</p>;
+  if (!upcomingData || !subjectsData) {
+    return <PageLoader />;
   }
 
   return (
@@ -119,7 +111,12 @@ const ReminderDashboard = () => {
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
-          <button className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg" type="submit">
+          <button 
+            className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg flex items-center justify-center" 
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? <ButtonSpinner /> : null}
             {editingId ? "Update" : "Create"}
           </button>
         </form>

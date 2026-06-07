@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import useSWR from "swr";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { formatTimeIST, formatDateLabel, getISTDateString } from "../utils/dateFormat";
+import { PageLoader, ButtonSpinner } from "../components/Spinner";
 
 const socket = io(import.meta.env.VITE_API_BASE?.replace("/api", "") || "http://localhost:5000");
 
@@ -10,8 +12,15 @@ const ChatPage = () => {
   const { user } = useAuth();
   const userId = user?._id || user?.id || "";
   const [messages, setMessages] = useState([]);
+  const { data: initialData, isLoading } = useSWR("/chat", {
+    onSuccess: (data) => {
+      setMessages(data.messages || []);
+    },
+    revalidateOnFocus: false,
+  });
   const [text, setText] = useState("");
   const listRef = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
   const [emojiCategory, setEmojiCategory] = useState("Smileys");
   const [emojiSearch, setEmojiSearch] = useState("");
@@ -97,13 +106,6 @@ const ChatPage = () => {
     });
   };
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const { data } = await api.get("/chat");
-      setMessages(data.messages || []);
-    };
-    fetchMessages();
-  }, []);
 
   useEffect(() => {
     socket.on("chat:new", (message) => {
@@ -149,6 +151,7 @@ const ChatPage = () => {
     addMessage(optimistic);
     const payload = text;
     setText("");
+    setIsSubmitting(true);
 
     try {
       const { data } = await api.post("/chat", { content: payload });
@@ -159,6 +162,8 @@ const ChatPage = () => {
       // Optionally could surface a toast; keep console for now
       // eslint-disable-next-line no-console
       console.error("Failed to send message", err?.response?.data || err?.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -167,6 +172,10 @@ const ChatPage = () => {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
   }, [messages]);
+
+  if (isLoading) {
+    return <PageLoader />;
+  }
 
   return (
     <div className="flex flex-col h-full max-h-[80vh] glass-panel rounded-3xl p-6">
@@ -227,7 +236,7 @@ const ChatPage = () => {
                           className="glass-chip text-primary px-2 py-1 rounded"
                           href={att.url}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noreferrer noopener"
                         >
                           Preview
                         </a>
@@ -235,6 +244,8 @@ const ChatPage = () => {
                           className="micro-btn bg-primary text-white px-2 py-1 rounded"
                           href={att.url}
                           download
+                          target="_blank"
+                          rel="noreferrer noopener"
                         >
                           Download
                         </a>
@@ -324,9 +335,11 @@ const ChatPage = () => {
         />
         <button
           onClick={sendMessage}
-          className="micro-btn bg-primary text-white px-4 py-2 rounded-full shadow-lg"
+          className="micro-btn bg-primary text-white px-4 py-2 rounded-full shadow-lg flex items-center justify-center"
           type="button"
+          disabled={isSubmitting}
         >
+          {isSubmitting ? <ButtonSpinner /> : null}
           Send
         </button>
       </div>

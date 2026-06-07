@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import useSWR from "swr";
 import api from "../services/api";
 import { uploadToCloudinary } from "../services/upload";
 import { useAuth } from "../hooks/useAuth";
+import { PageLoader, ButtonSpinner } from "../components/Spinner";
 
 const MaterialsPage = () => {
-  const [materials, setMaterials] = useState([]);
-  const [subjects, setSubjects] = useState([]);
+  const { data: materialsData, mutate: mutateMaterials } = useSWR("/materials");
+  const materials = materialsData?.materials || [];
+
+  const { data: subjectsData } = useSWR("/subjects");
+  const subjects = subjectsData?.subjects || [];
+
   const [form, setForm] = useState({ title: "", description: "", subjectId: "" });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -25,18 +31,6 @@ const MaterialsPage = () => {
 
   const maxUploadBytes = getMaxUploadBytes();
   const maxUploadMb = maxUploadBytes ? Math.round(maxUploadBytes / (1024 * 1024)) : null;
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const [{ data: matData }, { data: subjData }] = await Promise.all([
-        api.get("/materials"),
-        api.get("/subjects"),
-      ]);
-      setMaterials(matData.materials || []);
-      setSubjects(subjData.subjects || []);
-    };
-    fetchData();
-  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -93,7 +87,7 @@ const MaterialsPage = () => {
         originalFilename: uploadResp.original_filename || uploadResp.originalFilename,
         storageProvider: "cloudinary",
       });
-      setMaterials((prev) => [data.material, ...prev]);
+      mutateMaterials();
       setForm({ title: "", description: "", subjectId: "" });
       setFile(null);
       setFlash("Material uploaded successfully");
@@ -106,6 +100,10 @@ const MaterialsPage = () => {
       setTimeout(() => setFlashError(""), 3000);
     }
   };
+
+  if (!materialsData && !materials.length) {
+    return <PageLoader />;
+  }
 
   return (
     <div className="space-y-6">
@@ -180,10 +178,11 @@ const MaterialsPage = () => {
             required
           />
           <button
-            className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg"
+            className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg flex items-center justify-center"
             type="submit"
-            disabled={uploading}
+            disabled={uploading || !subjectsData}
           >
+            {uploading ? <ButtonSpinner /> : null}
             {uploading ? "Uploading..." : "Upload"}
           </button>
           {uploading && (
@@ -216,9 +215,18 @@ const MaterialsPage = () => {
                   className="text-primary underline"
                   href={m.url}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noreferrer noopener"
                 >
                   View
+                </a>
+                <a
+                  className="text-primary underline"
+                  href={m.secureUrl || m.url}
+                  download={m.originalFilename || m.title || "download"}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Download
                 </a>
               </div>
             </div>

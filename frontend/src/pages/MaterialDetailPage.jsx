@@ -1,55 +1,53 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
+import useSWR from "swr";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { PageLoader, ButtonSpinner } from "../components/Spinner";
 
 const MaterialDetailPage = () => {
   const { id } = useParams();
-  const [material, setMaterial] = useState(null);
-  const [comments, setComments] = useState([]);
+  const { data: materialData, isLoading: matLoading } = useSWR(`/materials/${id}`);
+  const material = materialData?.material || null;
+
+  const { data: commentsData, mutate: mutateComments } = useSWR(`/materials/${id}/comments`);
+  const comments = commentsData?.comments || [];
+
   const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
-
-  const fetchComments = async () => {
-    const { data } = await api.get(`/materials/${id}/comments`);
-    setComments(data.comments || []);
-  };
-
-  useEffect(() => {
-    const load = async () => {
-      const { data: matData } = await api.get(`/materials/${id}`);
-      setMaterial(matData.material || null);
-      await fetchComments();
-    };
-    load();
-  }, [id]);
 
   const submitComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    await api.post(`/materials/${id}/comments`, { content: commentText });
-    setCommentText("");
-    await fetchComments();
+    setIsSubmitting(true);
+    try {
+      await api.post(`/materials/${id}/comments`, { content: commentText });
+      setCommentText("");
+      mutateComments();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const pinComment = async (commentId) => {
     await api.post(`/materials/${id}/comments/pin/${commentId}`);
-    await fetchComments();
+    mutateComments();
   };
 
   const deleteComment = async (commentId) => {
     await api.delete(`/materials/${id}/comments/${commentId}`);
-    await fetchComments();
+    mutateComments();
   };
 
-  if (!material) return <p className="text-slate-600">Loading material...</p>;
+  if (matLoading || !material) return <PageLoader />;
 
   return (
       <div className="space-y-6">
         <div className="glass-panel rounded-3xl p-6">
           <h1 className="text-2xl font-semibold text-ink">{material.title}</h1>
           <p className="text-slate-600">{material.description}</p>
-        <a className="text-primary underline" href={material.url} target="_blank" rel="noreferrer">
+        <a className="text-primary underline" href={material.secureUrl || material.url} target="_blank" rel="noreferrer noopener" download={material.originalFilename || material.title || "download"}>
           View / Download
         </a>
       </div>
@@ -63,9 +61,14 @@ const MaterialDetailPage = () => {
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
             />
-            <button className="micro-btn bg-primary text-white px-4 py-2 rounded-full" type="submit">
-            Post
-          </button>
+            <button 
+              className="micro-btn bg-primary text-white px-4 py-2 rounded-full flex items-center justify-center" 
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <ButtonSpinner /> : null}
+              Post
+            </button>
         </form>
 
         <div className="space-y-2">

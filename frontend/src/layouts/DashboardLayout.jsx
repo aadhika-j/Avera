@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import useSWR from "swr";
 import { useAuth } from "../hooks/useAuth";
 import ThemeToggle from "../components/ThemeToggle.jsx";
 import api from "../services/api";
@@ -38,33 +39,27 @@ const DashboardLayout = ({ children }) => {
     }).length;
   };
 
-  useEffect(() => {
-    const loadCounts = async () => {
-      try {
-        const [materials, reminders, events, chats] = await Promise.all([
-          api.get("/materials"),
-          api.get("/components/upcoming"),
-          api.get("/events"),
-          api.get("/chat"),
-        ]);
-        const lastSeen = {
-          materials: localStorage.getItem(lastSeenKeys.materials),
-          reminders: localStorage.getItem(lastSeenKeys.reminders),
-          events: localStorage.getItem(lastSeenKeys.events),
-          chat: localStorage.getItem(lastSeenKeys.chat),
-        };
-        setCounts({
-          materials: countNew(materials.data?.materials, lastSeen.materials),
-          reminders: countNew(reminders.data?.components, lastSeen.reminders),
-          events: countNew(events.data?.events, lastSeen.events),
-          chat: countNew(chats.data?.messages, lastSeen.chat),
-        });
-      } catch (err) {
-        // ignore count errors
-      }
+  const { data: materialsData } = useSWR("/materials");
+  const { data: remindersData } = useSWR("/components/upcoming");
+  const { data: eventsData } = useSWR("/events");
+  const { data: chatData } = useSWR("/chat");
+  // Prefetch subjects as well so it's ready when navigating
+  useSWR("/subjects");
+
+  const counts = useMemo(() => {
+    const lastSeen = {
+      materials: localStorage.getItem(lastSeenKeys.materials),
+      reminders: localStorage.getItem(lastSeenKeys.reminders),
+      events: localStorage.getItem(lastSeenKeys.events),
+      chat: localStorage.getItem(lastSeenKeys.chat),
     };
-    loadCounts();
-  }, [lastSeenKeys]);
+    return {
+      materials: countNew(materialsData?.materials, lastSeen.materials),
+      reminders: countNew(remindersData?.components, lastSeen.reminders),
+      events: countNew(eventsData?.events, lastSeen.events),
+      chat: countNew(chatData?.messages, lastSeen.chat),
+    };
+  }, [materialsData, remindersData, eventsData, chatData, lastSeenKeys]);
 
   useEffect(() => {
     const pathToKey = {
@@ -81,7 +76,6 @@ const DashboardLayout = ({ children }) => {
     if (matchedKey) {
       const now = new Date().toISOString();
       localStorage.setItem(lastSeenKeys[matchedKey], now);
-      setCounts((prev) => ({ ...prev, [matchedKey]: 0 }));
     }
   }, [location.pathname, lastSeenKeys]);
 

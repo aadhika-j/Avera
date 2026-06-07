@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import useSWR from "swr";
 import api from "../services/api";
 import { uploadToCloudinary } from "../services/upload";
 import { useAuth } from "../hooks/useAuth";
 import { formatDateShort } from "../utils/dateFormat";
+import { PageLoader, ButtonSpinner, Spinner } from "../components/Spinner";
 
 const DEFAULT_SEMESTERS = [
   { value: "", label: "Select semester" },
@@ -17,64 +19,31 @@ const DEFAULT_SEMESTERS = [
 ];
 
 const SubjectsPage = () => {
-  const [subjects, setSubjects] = useState([]);
-  const [semesters, setSemesters] = useState(DEFAULT_SEMESTERS);
-  const [form, setForm] = useState({ name: "", code: "", semesterId: "" });
-  const [selectedSubject, setSelectedSubject] = useState(null);
-  const [components, setComponents] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [uploading, setUploading] = useState(null);
-  const [noteDrafts, setNoteDrafts] = useState({});
-  const [uploadProgress, setUploadProgress] = useState({});
-  const [flash, setFlash] = useState("");
-  const [flashError, setFlashError] = useState("");
-  const [pendingFiles, setPendingFiles] = useState({});
-  const [copyMessage, setCopyMessage] = useState("");
-  const [preview, setPreview] = useState(null);
-  const { isCR } = useAuth();
+  const { data: subjectsData, mutate: mutateSubjects } = useSWR("/subjects");
+  const subjects = subjectsData?.subjects || [];
 
-  useEffect(() => {
-    const fetchSubjects = async () => {
-      const { data } = await api.get("/subjects");
-      setSubjects(data.subjects || []);
-    };
-    const fetchSemesters = async () => {
-      try {
-        const { data } = await api.get("/semesters");
-        const opts = [{ value: "", label: "Select semester" }].concat(
-          (data.semesters || []).map((s) => ({ value: s._id || s.number, label: s.name }))
-        );
-        setSemesters(opts);
-      } catch (err) {
-        setSemesters(DEFAULT_SEMESTERS);
+  const { data: semestersData } = useSWR("/semesters");
+  const semesters = semestersData?.semesters
+    ? [{ value: "", label: "Select semester" }].concat(
+        semestersData.semesters.map((s) => ({ value: s._id || s.number, label: s.name }))
+      )
+    : DEFAULT_SEMESTERS;
+
+  const { data: componentsData, mutate: mutateComponents, isLoading: isComponentsLoading } = useSWR(
+    selectedSubject?._id ? `/components?subjectId=${selectedSubject._id}` : null,
+    {
+      onSuccess: (data) => {
+        const drafts = {};
+        (data.components || []).forEach((c) => {
+          drafts[c._id] = c.attachmentNote || "";
+        });
+        setNoteDrafts(drafts);
       }
-    };
-
-    fetchSubjects();
-    fetchSemesters();
-  }, []);
-
-  useEffect(() => {
-    const loadComponents = async () => {
-      if (!selectedSubject?._id) return;
-      await refreshComponents(selectedSubject._id);
-    };
-    loadComponents();
-  }, [selectedSubject]);
-
-  const refreshComponents = async (subjectId) => {
-    try {
-      const { data } = await api.get(`/components?subjectId=${subjectId}`);
-      setComponents(data.components || []);
-      const drafts = {};
-      (data.components || []).forEach((c) => {
-        drafts[c._id] = c.attachmentNote || "";
-      });
-      setNoteDrafts(drafts);
-    } catch (err) {
-      setComponents([]);
     }
-  };
+  );
+  const components = componentsData?.components || [];
+
+  const refreshComponents = () => mutateComponents();
 
   const submit = async (e) => {
     e.preventDefault();
@@ -83,17 +52,16 @@ const SubjectsPage = () => {
       code: form.code,
       semesterId: form.semesterId,
     });
-    setSubjects((prev) => [data.subject, ...prev]);
+    mutateSubjects();
     setForm({ name: "", code: "", semesterId: "" });
   };
 
   const remove = async (id) => {
     await api.delete(`/subjects/${id}`);
-    setSubjects((prev) => prev.filter((s) => s._id !== id));
+    mutateSubjects();
     if (selectedSubject?._id === id) {
       setSelectedSubject(null);
       setShowModal(false);
-      setComponents([]);
     }
   };
 
@@ -223,18 +191,11 @@ const SubjectsPage = () => {
   };
 
   const saveAttachments = async (componentId, nextAttachments, note) => {
-    const { data } = await api.put(`/components/${componentId}`, {
+    await api.put(`/components/${componentId}`, {
       attachments: nextAttachments,
       attachmentNote: note,
     });
-    const updated = data.component || null;
-    setComponents((prev) =>
-      prev.map((c) =>
-        c._id === componentId ? updated || { ...c, attachments: nextAttachments, attachmentNote: note } : c
-      )
-    );
-    // refresh from server to ensure persisted URLs are used
-    await refreshComponents(selectedSubject?._id || "");
+    mutateComponents();
   };
 
   const handleAddAttachment = async (component, file) => {
@@ -320,6 +281,10 @@ const SubjectsPage = () => {
     }
   };
 
+  if (!subjectsData && !subjects.length) {
+    return <PageLoader />;
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -358,7 +323,7 @@ const SubjectsPage = () => {
               </option>
             ))}
           </select>
-          <button className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg" type="submit">
+          <button className="micro-btn bg-primary text-white px-4 py-3 rounded-full shadow-lg" type="submit" disabled={!subjectsData}>
             Add Subject
           </button>
         </form>
@@ -411,7 +376,6 @@ const SubjectsPage = () => {
               onClick={() => {
                 setShowModal(false);
                 setSelectedSubject(null);
-                setComponents([]);
               }}
               className="absolute right-3 top-3 text-slate-500 hover:text-slate-700"
             >
@@ -431,6 +395,9 @@ const SubjectsPage = () => {
                 </div>
               )}
             </div>
+            {isComponentsLoading ? (
+              <div className="py-12"><Spinner /></div>
+            ) : (
             <div className="grid grid-cols-1 gap-4 max-h-[70vh] overflow-y-auto pr-1">
               {componentSlots.map((slot) => {
                 const found = components.find((c) => c.type === slot);
@@ -485,6 +452,7 @@ const SubjectsPage = () => {
                                           className="text-primary underline"
                                           href={link}
                                           download={filename}
+                                          target="_blank"
                                           rel="noreferrer noopener"
                                           title={link}
                                         >
@@ -565,6 +533,7 @@ const SubjectsPage = () => {
                                   onClick={() => triggerPendingUpload(found)}
                                   disabled={uploading === found._id}
                                 >
+                                  {uploading === found._id ? <ButtonSpinner /> : null}
                                   Save attachment
                                 </button>
                               </div>
@@ -611,6 +580,7 @@ const SubjectsPage = () => {
                 );
               })}
             </div>
+            )}
           </div>
         </div>
       )}
