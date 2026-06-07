@@ -16,7 +16,6 @@ const baseLinks = [
 
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
-  const [counts, setCounts] = useState({});
   const location = useLocation();
 
   const lastSeenKeys = useMemo(
