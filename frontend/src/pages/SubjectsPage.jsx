@@ -29,6 +29,19 @@ const SubjectsPage = () => {
       )
     : DEFAULT_SEMESTERS;
 
+  const [form, setForm] = useState({ name: "", code: "", semesterId: "" });
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [uploading, setUploading] = useState(null);
+  const [noteDrafts, setNoteDrafts] = useState({});
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [flash, setFlash] = useState("");
+  const [flashError, setFlashError] = useState("");
+  const [pendingFiles, setPendingFiles] = useState({});
+  const [copyMessage, setCopyMessage] = useState("");
+  const [preview, setPreview] = useState(null);
+  const { isCR } = useAuth();
+
   const { data: componentsData, mutate: mutateComponents, isLoading: isComponentsLoading } = useSWR(
     selectedSubject?._id ? `/components?subjectId=${selectedSubject._id}` : null,
     {
